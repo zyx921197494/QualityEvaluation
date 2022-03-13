@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    username: zyx
+    password: Zyx3527109
+    url: jdbc:mysql://localhost:3306/springsecurity?serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**
+  global-config:
+    banner: false
