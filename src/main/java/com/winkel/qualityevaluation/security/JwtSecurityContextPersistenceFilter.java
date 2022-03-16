@@ -65,7 +65,6 @@ public class JwtSecurityContextPersistenceFilter extends GenericFilterBean {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        //TODO
         // 确保该过滤器只被执行一次
         if (request.getAttribute(FILTER_APPLIED) != null) {
             chain.doFilter(req, res);

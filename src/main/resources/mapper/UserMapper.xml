@@ -11,6 +11,7 @@
         <result column="location_code" property="locationCode"/>
         <result column="school_code" property="schoolCode"/>
         <result column="is_locked" property="isLocked"/>
+        <result column="create_time" property="createTime"/>
     </resultMap>
 
 

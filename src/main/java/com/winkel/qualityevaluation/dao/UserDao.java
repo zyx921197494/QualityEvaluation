@@ -15,4 +15,6 @@ public interface UserDao extends BaseMapper<User> {
 
     List<Authority> selectAuthorities(@Param("username") String username);
 
+
+
 }

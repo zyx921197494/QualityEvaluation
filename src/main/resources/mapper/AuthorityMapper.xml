@@ -6,7 +6,7 @@
     <resultMap id="BaseResultMap" type="com.winkel.qualityevaluation.entity.Authority">
         <id column="id" property="id"/>
         <result column="url" property="url"/>
-        <result column="authority_name" property="authorityName"/>
+        <result column="authority_name" property="authority"/>
     </resultMap>
 
 </mapper>

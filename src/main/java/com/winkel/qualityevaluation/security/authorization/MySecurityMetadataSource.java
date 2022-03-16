@@ -28,8 +28,6 @@ import java.util.*;
 @Component
 public class MySecurityMetadataSource implements FilterInvocationSecurityMetadataSource {
 
-    //TODO 获取数据库中所有权限Service
-
     @Autowired
     private AuthorityService authorityService;
 

@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -26,6 +27,7 @@ public class User implements UserDetails, Serializable {
     private String locationCode;
     private String schoolCode;
     private Integer isLocked;
+    private LocalDateTime createTime;
 
     //权限集合
     private List<Authority> authorities;
@@ -34,6 +36,26 @@ public class User implements UserDetails, Serializable {
         this.username = username;
         this.password = password;
     }
+
+    public User(String id, String username, String password, Integer isLocked, LocalDateTime createTIme) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.isLocked = isLocked;
+        this.createTime = createTIme;
+    }
+
+    public User(String id, String username, String password, String locationCode, Integer isLocked, LocalDateTime createTIme) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.locationCode = locationCode;
+        this.isLocked = isLocked;
+        this.createTime = createTIme;
+    }
+
+
+
 
     @Override
     public boolean isAccountNonExpired() {

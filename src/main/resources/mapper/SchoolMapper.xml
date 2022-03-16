@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.winkel.qualityevaluation.dao.SchoolDao">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.winkel.qualityevaluation.entity.School">
+        <result column="school_code" property="code" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_name" property="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location" property="location" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location_code" property="locationCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location_type_code" property="locationTypeCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_type_code" property="typeCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_host_code" property="hostCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="is_register" property="isRegister" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        <result column="is_generally_beneficial" property="isGenerallyBeneficial" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+    </resultMap>
+
+</mapper>
