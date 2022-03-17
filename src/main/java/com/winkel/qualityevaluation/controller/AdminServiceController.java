@@ -45,11 +45,11 @@ public class AdminServiceController {
     //TODO 上传Excel文件并解析为school对象
     //TODO 创建用户后为其添加权限
     @PostMapping("/createRegisterUsers")
-    public ResponseUtil createRegisterUsers(@RequestBody List<School> schoolList) {
+    public ResponseUtil createRegisterUsers(@RequestBody List<School> schoolList, @RequestParam("authorityType") Integer authorityType) {
         //先查询是否存在幼儿园(以标识码为准)，存在则更新，不存在则增加幼儿园
         if (schoolService.saveOrUpdateBatch(schoolList)) {
             //为每个幼儿园创建用户
-            if (userService.createRegisterUsers(schoolList)) {
+            if (userService.createRegisterUsers(schoolList, authorityType)) {
                 return ResponseUtil.response(200, "创建在册园账号成功", null);
             }
             return ResponseUtil.response(200, "创建在册园账号失败", null);

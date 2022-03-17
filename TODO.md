@@ -18,12 +18,6 @@
    public ExceptionHandlingControllerAdvice() {
    logger = LoggerFactory.getLogger(getClass());
    }
-
-   /**
-    * SQLException
-    * @param exception
-    * @return
-      */
       @ExceptionHandler({ SQLException.class })
       public String databaseError(Exception exception) {
       logger.error("Request raised " + exception.getClass().getSimpleName());
@@ -33,3 +27,5 @@
 ```
 
 四、Swagger接口文档方便前端查看
+
+五、长的数据库操作使用事务

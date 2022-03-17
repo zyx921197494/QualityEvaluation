@@ -9,4 +9,27 @@
         <result column="authority_name" property="authority"/>
     </resultMap>
 
+    <insert id="insertUserAuthority">
+        insert into user_authority(user_id, authority_id) VALUES
+        <trim prefix="(" suffix=")">
+            <if test="userId != null">
+                #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="authorityId != null">
+                #{authorityId,jdbcType=INTEGER
+            </if>
+        </trim>
+
+    </insert>
+
+    <insert id="insertUserAuthorityBatch" parameterType="java.util.List">
+        insert into user_authority(user_id, authority_id) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+             #{item.userId,jdbcType=VARCHAR},
+             #{item.authorityId,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+
 </mapper>

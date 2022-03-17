@@ -15,7 +15,7 @@ public interface UserService extends IService<User> {
 
     boolean createAdmins();
 
-    boolean createRegisterUsers(List<School> schools);
+    boolean createRegisterUsers(List<School> schools, int authorityType);
 
     boolean createNotRegisterUsers(String locationCode, int num);
 
