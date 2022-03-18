@@ -8,6 +8,7 @@
 1. SQLException：
 2. BatchUpdateException: Cannot add or update a child row: a foreign key constraint fails
 3. java.sql.SQLIntegrityConstraintViolationException: Cannot add or update a child row: a foreign key constraint fails
+4. java.io.FileNotFoundException: F:\school.xls (系统找不到指定的文件。)
    
 ```java
    @ControllerAdvice

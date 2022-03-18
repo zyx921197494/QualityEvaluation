@@ -7,6 +7,9 @@ package com.winkel.qualityevaluation.controller;
   */
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.SchoolService;
@@ -15,7 +18,9 @@ import com.winkel.qualityevaluation.util.ResponseUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -29,9 +34,8 @@ public class AdminServiceController {
 
     @GetMapping("/ccc")
     public User ddd() {
-        QueryWrapper queryWrapper = new QueryWrapper<User>().select("username", "password", "is_locked").eq("username", "user");
-        User user = userService.getOne(queryWrapper);
-        return user;
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>().select("username", "password", "is_locked").eq("username", "user");
+        return userService.getOne(queryWrapper);
     }
 
     @PostMapping("/createAdmins")
@@ -67,22 +71,82 @@ public class AdminServiceController {
     }
 
     //6.按条件搜索幼儿园
-//    @PostMapping("/schools")
-//    public List<School> schools() {
-//
-//    }
+    @PostMapping("/schools")
+    public IPage<School> schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer current, @RequestParam("pageSize") Integer pageSize) {
+        IPage<School> page = new Page<>(current, pageSize);
+
+        Map<String, Object> queryMap = new HashMap<>(2);
+        queryMap.put("is_register", isRegister);
+        queryMap.put("is_generally_beneficial", isGB);
+        QueryWrapper<School> wrapper = new QueryWrapper<School>().allEq(queryMap, false);
+        wrapper
+                .like("school_name", keyName)
+                .like("school_location", keyLocation)
+                .like("school_location_code", locationCode)
+                .likeRight("school_location_type_code", isCity != null && isCity == 1 ? 1 : 2);
+        if (schoolCode != null) {
+            wrapper.like("school_code", schoolCode);
+        }
+        return schoolService.page(page, isPublic != null && isPublic == 1 ? wrapper.ne("school_host_code", 999) : wrapper.eq("school_host_code", 999));
+    }
 
     //7.查看、修改幼儿园信息
+    // todo 同步修改其他评估数据
+    @PostMapping("/updateSchool")
+    public boolean updateSchool(@RequestParam String schoolCode, String name, String location, String locationCode, String locationTypeCode, String typeCode, String hostCode, Integer isRegister, Integer isGB) {
+//        Map<String, Object> map = new HashMap<>(9);
+        UpdateWrapper<School> wrapper = new UpdateWrapper<School>().eq("school_code", schoolCode);
+        School school = new School()
+                .setCode(schoolCode)
+                .setName(name)
+                .setLocation(location)
+                .setLocationCode(locationCode)
+                .setLocationTypeCode(locationTypeCode)
+                .setTypeCode(typeCode)
+                .setHostCode(hostCode)
+                .setIsRegister(isRegister)
+                .setIsGenerallyBeneficial(isGB);
+        return schoolService.update(school, wrapper);
+    }
 
     //8.未在册转为在册
+    @PostMapping("/registerSchool")
+    public boolean registerSchool(@RequestParam String schoolCode) {
+        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("is_register", 1));
+    }
 
     //9.幼儿园归属地修改
+    @PostMapping("/changeSchoolLocation")
+    public boolean changeSchoolLocation(@RequestParam String schoolCode, @RequestParam String locationCode) {
+        String oldCode = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode)).getLocationCode();
+        String newCode = oldCode.substring(0, 6) + locationCode.substring(6, 12);
+        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set(locationCode, newCode));
+    }
 
     //12.省市县管理员修改本账号密码
+    @PostMapping("/changeAdminPassword")
+    public boolean changePassword(@RequestParam String userId, @RequestParam String newPwd) {
+        return userService.update(new QueryWrapper<User>().eq("password", newPwd));
+    }
 
-    //12.县级管理员更换幼儿园密码：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评密码，密码由系统自动生成
+    //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评密码，密码由系统自动生成
+    @PostMapping("/changeUserPassword")
+    public boolean changeUserPassword(@RequestParam String schoolCode, @RequestParam Integer authorityId, @RequestParam String newPwd) {
+        return userService.changeUserPassword(schoolCode, authorityId, newPwd);
+    }
 
     //4.删除幼儿园账号
+    //todo 同时删除评估数据：代码删除 或 触发器
+    @PostMapping("/deleteUser")
+    public boolean deleteUser(@RequestParam String schoolCode) {
+        return userService.remove(new QueryWrapper<User>().eq("school_code", schoolCode));
+    }
+
+    //重启评估
+    @PostMapping("")
+    public void resetEvaluation(@RequestParam String evaluateSubmitId) {
+
+    }
 
 
 }

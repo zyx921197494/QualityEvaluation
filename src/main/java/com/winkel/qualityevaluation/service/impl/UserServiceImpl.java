@@ -100,5 +100,8 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
         return this.saveBatch(userList);
     }
 
-
+    @Override
+    public boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd) {
+        return userDao.updateUserPassword(schoolCode, authorityId, newPwd);
+    }
 }

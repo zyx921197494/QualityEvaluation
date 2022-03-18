@@ -19,4 +19,5 @@ public interface UserService extends IService<User> {
 
     boolean createNotRegisterUsers(String locationCode, int num);
 
+    boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd);
 }
