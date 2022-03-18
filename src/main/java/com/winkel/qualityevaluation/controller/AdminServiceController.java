@@ -115,18 +115,18 @@ public class AdminServiceController {
         return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("is_register", 1));
     }
 
-    //9.幼儿园归属地修改
+    //9.幼儿园归属地修改 school_location_code前6位改为新县代码
     @PostMapping("/changeSchoolLocation")
     public boolean changeSchoolLocation(@RequestParam String schoolCode, @RequestParam String locationCode) {
         String oldCode = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode)).getLocationCode();
-        String newCode = oldCode.substring(0, 6) + locationCode.substring(6, 12);
-        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set(locationCode, newCode));
+        String newCode = locationCode.substring(0, 6) + oldCode.substring(6, 12);
+        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", newCode));
     }
 
     //12.省市县管理员修改本账号密码
     @PostMapping("/changeAdminPassword")
     public boolean changePassword(@RequestParam String userId, @RequestParam String newPwd) {
-        return userService.update(new QueryWrapper<User>().eq("password", newPwd));
+        return userService.update(new UpdateWrapper<User>().eq("id",userId).set("password", newPwd));
     }
 
     //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评密码，密码由系统自动生成
@@ -142,11 +142,36 @@ public class AdminServiceController {
         return userService.remove(new QueryWrapper<User>().eq("school_code", schoolCode));
     }
 
+
+
+
+
+    //定义评价任务
+
+    //定义一级评价指标
+
+    //定义耳机评价指标
+
+    //定义三级评价指标
+
+
+    //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
+    //冻结以往周期所有的督评、复评数据
+    //督评、复评账号随周期更换
+
+    //导出评估数据
+
     //重启评估
-    @PostMapping("")
+    @PostMapping("/resetEvaluation")
     public void resetEvaluation(@RequestParam String evaluateSubmitId) {
 
     }
+
+    //审核省市县的复评意见书
+
+    //导出自评、督评、复评账号
+
+
 
 
 }
