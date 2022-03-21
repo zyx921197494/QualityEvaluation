@@ -12,6 +12,7 @@
         <result column="school_code" property="schoolCode"/>
         <result column="is_locked" property="isLocked"/>
         <result column="create_time" property="createTime"/>
+        <result column="cycle" property="cycle"/>
     </resultMap>
 
     <select id="checkPassword" resultType="int" parameterType="map">

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.winkel.qualityevaluation.dao.Index3Dao">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3">
+        <id column="evaluate_index3_id" property="index3Id"/>
+        <result column="evaluate_index2_id" property="index2Id"/>
+        <result column="evaluate_index3_name" property="index3Name"/>
+        <result column="evaluate_index3_content" property="index3Content"/>
+        <result column="evaluate_type" property="type"/>
+        <result column="evaluate_length" property="length"/>
+        <result column="evaluate_memo" property="memo"/>
+    </resultMap>
+
+</mapper>

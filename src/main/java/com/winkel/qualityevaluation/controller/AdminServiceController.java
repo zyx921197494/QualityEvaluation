@@ -152,7 +152,7 @@ public class AdminServiceController {
 
     //定义耳机评价指标
 
-    //定义三级评价指标
+    //定义三级评价指标及对应各选项的分数
 
 
     //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
@@ -161,7 +161,7 @@ public class AdminServiceController {
 
     //导出评估数据
 
-    //重启评估
+    //重启评估(解锁submit，修改对应task status)
     @PostMapping("/resetEvaluation")
     public void resetEvaluation(@RequestParam String evaluateSubmitId) {
 

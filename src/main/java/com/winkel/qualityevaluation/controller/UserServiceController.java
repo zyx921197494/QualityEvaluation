@@ -28,17 +28,17 @@ public class UserServiceController {
     }
 
 
-    //园长提交幼儿园信息
+    //园长提交幼儿园信息(更新school)
 
-    //园长提交个人信息
+    //园长提交个人信息(更新user)
 
-    //园长开启自评
+    //园长开启自评(更新task)
 
-    //园长/教师提交评估问题答案
+    //园长/教师提交评估问题答案(根据index3和selected(接受一个VO(taskId, index3Id, selected)计算得分，插入submit)
 
-    //园长提交评估数据
+    //园长提交评估数据(修改task状态，锁定submit，锁定教师user)
 
-    //园长上传文件
+    //园长上传文件(提交评估数据之后才能进行，修改task状态)
 
     //园长下载文件
 
@@ -54,7 +54,7 @@ public class UserServiceController {
 
     //督评组长提交评估数据
 
-    //督评组长上传文件
+    //督评组长上传文件(提交评估数据之后才能进行)
 
     //督评组长下载文件
 

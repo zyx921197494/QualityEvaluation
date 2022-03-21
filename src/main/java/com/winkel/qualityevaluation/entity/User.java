@@ -28,6 +28,7 @@ public class User implements UserDetails, Serializable {
     private String schoolCode;
     private Integer isLocked;
     private LocalDateTime createTime;
+    private Integer cycle;
 
     //权限集合
     private List<Authority> authorities;

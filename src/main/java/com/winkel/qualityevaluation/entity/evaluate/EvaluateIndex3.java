@@ -6,6 +6,9 @@ package com.winkel.qualityevaluation.entity.evaluate;
   @Date 2022-03-16 11:07
   */
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,13 +20,28 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
+@TableName("evaluateindex3")
 public class EvaluateIndex3 {
+
+    @TableId("evaluate_index3_id")
     private Integer index3Id;
+
+    @TableField("evaluate_index2_id")
     private Integer index2Id;
+
+    @TableField("evaluate_index3_name")
     private String index3Name;
 
-    private Integer Type;  //类型：1数字型 2文本型 3单选型 4多选型
+    @TableField("evaluate_index3_content")
+    private String index3Content;  //问题
+
+    @TableField("evaluate_type")
+    private Integer type;  //类型：1数字型 2文本型 3单选型 4多选型
+
+    @TableField("evaluate_length")
     private Integer length;  //长度限制
-    private String selected; //选择的答案
+
+    @TableField("evaluate_memo")
     private String memo;  //备注
+
 }
