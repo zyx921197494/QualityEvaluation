@@ -17,4 +17,17 @@
         <result column="task_is_locked" property="isLocked"/>
     </resultMap>
 
+    <update id="startCycle" parameterType="java.lang.String">
+        update evaluatecycle
+        set cycle_current = cycle_current + 1
+        where cycle_county_location_code = #{locationCode}
+    </update>
+
+    <select id="selectCurrentCycle" resultType="java.lang.Integer">
+        select cycle_current
+        from evaluatecycle
+        where cycle_county_location_code = #{locationCode}
+    </select>
+
+
 </mapper>

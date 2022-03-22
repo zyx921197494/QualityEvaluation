@@ -10,6 +10,7 @@
         <result column="evaluate_index3_id" property="index3Id"/>
         <result column="submit_content" property="content"/>
         <result column="submit_is_locked" property="isLocked"/>
+        <result column="score" property="score"/>
     </resultMap>
 
 </mapper>

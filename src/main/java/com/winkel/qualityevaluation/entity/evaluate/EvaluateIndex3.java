@@ -36,12 +36,12 @@ public class EvaluateIndex3 {
     private String index3Content;  //问题
 
     @TableField("evaluate_type")
-    private Integer type;  //类型：1数字型 2文本型 3单选型 4多选型
+    private Integer type;  // 1判断(A好B坏 20分) 2单选(0、10、20、30分) 3多选(满分40分) 4文本
 
     @TableField("evaluate_length")
     private Integer length;  //长度限制
 
     @TableField("evaluate_memo")
-    private String memo;  //备注
+    private String memo;  // 备注
 
 }

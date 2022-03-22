@@ -10,17 +10,24 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
-import com.winkel.qualityevaluation.service.api.SchoolService;
-import com.winkel.qualityevaluation.service.api.UserService;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
+import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
+import com.winkel.qualityevaluation.entity.task.EvaluateTask;
+import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.vo.SubmitVo;
+import org.junit.Test;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -31,6 +38,15 @@ public class AdminServiceController {
 
     @Autowired
     private SchoolService schoolService;
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
+    private SubmitService submitService;
+
+    @Autowired
+    private Index3Service index3Service;
 
     @GetMapping("/ccc")
     public User ddd() {
@@ -126,7 +142,7 @@ public class AdminServiceController {
     //12.省市县管理员修改本账号密码
     @PostMapping("/changeAdminPassword")
     public boolean changePassword(@RequestParam String userId, @RequestParam String newPwd) {
-        return userService.update(new UpdateWrapper<User>().eq("id",userId).set("password", newPwd));
+        return userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd));
     }
 
     //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评密码，密码由系统自动生成
@@ -142,7 +158,79 @@ public class AdminServiceController {
         return userService.remove(new QueryWrapper<User>().eq("school_code", schoolCode));
     }
 
+    //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
+    //冻结以往周期所有的督评、复评数据
+    //督评、复评账号随周期更换
+    @GetMapping("/startCycle")
+    public boolean startCycle(@RequestParam String locationCode) {
+        //todo 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
+        boolean[] success = new boolean[5];
+        List<School> schoolList = schoolService.list(new QueryWrapper<School>().eq("school_location_code", locationCode));
+        ArrayList<EvaluateTask> taskList = new ArrayList<>(schoolList.size());
+        for (School school : schoolList) {
+            System.out.println(school.getLocationCode());
+            Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000") + 1;
+            taskList.add(new EvaluateTask()
+                    .setSchoolCOde(school.getCode())
+                    .setEvaluateId(1)
+                    .setName("自评")
+                    .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
+                    .setCycle(currentCycle)
+                    .setStatus(0)
+                    .setType(1)
+                    .setIsLocked(0));
+        }
+        success[0] = taskService.saveBatch(taskList);
 
+        for (int i = 2; i < 6; i++) {
+            String name;
+            if (i == 2) name = "督评";
+            else if (i == 3) name = "县复评";
+            else if (i == 4) name = "市复评";
+            else name = "省复评";
+            for (EvaluateTask task : taskList) {
+                task.setType(i);
+                task.setName(name);
+            }
+            success[i - 1] = taskService.saveBatch(taskList);
+        }
+        //开启新周期
+        if (success[0] == success[1] == success[2] == success[3] == success[4]) {
+            return taskService.startCycle(locationCode);
+        } else {
+            return false;
+        }
+    }
+
+    //提交评估问题及附件 todo 附件
+    @PostMapping("/submitEvaluation")
+    public boolean submitEvaluation(@RequestBody List<SubmitVo> submitVos) {  // , @RequestParam("files")MultipartFile[] files
+        List<EvaluateSubmit> list = new ArrayList<>(submitVos.size());
+
+        for (SubmitVo submitVo : submitVos) {
+            int score = 0;
+            int type = submitVo.getType();
+            String content = submitVo.getContent();
+            if (type == 1 && "A".equalsIgnoreCase(content)) {
+                score = 20;
+            } else if (type == 2) {
+                if ("B".equalsIgnoreCase(content)) score = 10;
+                else if ("C".equalsIgnoreCase(content)) score = 20;
+                else if ("D".equalsIgnoreCase(content)) score = 30;
+            } else if (type == 3) {
+                score = submitVo.getContent().length() * 10;
+            }
+            list.add(new EvaluateSubmit()
+                    .setTaskId(submitVo.getTaskId())
+                    .setIndex3Id(submitVo.getIndex3Id())
+                    .setContent(content)
+                    .setScore(score)
+                    .setSubmitTime(LocalDateTime.now())
+                    .setIsLocked(0));
+        }
+
+        return submitService.saveBatch(list);
+    }
 
 
 
@@ -154,10 +242,6 @@ public class AdminServiceController {
 
     //定义三级评价指标及对应各选项的分数
 
-
-    //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
-    //冻结以往周期所有的督评、复评数据
-    //督评、复评账号随周期更换
 
     //导出评估数据
 
@@ -172,6 +256,12 @@ public class AdminServiceController {
     //导出自评、督评、复评账号
 
 
+
+    @Test
+    public void test() {
+        System.out.println(taskService==null);
+        System.out.println(taskService.getCurrentCycle("3100000000") + 1);
+    }
 
 
 }

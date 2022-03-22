@@ -6,6 +6,7 @@ package com.winkel.qualityevaluation.entity.task;
   @Date 2022-03-16 12:03
   */
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -25,26 +26,23 @@ import java.time.LocalDateTime;
 @TableName("evaluatesubmit")
 public class EvaluateSubmit {
 
-    @TableId("submit_id")
+    @TableId(value = "submit_id",type = IdType.INPUT)
     private Integer id;
 
-    @TableId("evaluate_task_id")
+    @TableField("evaluate_task_id")
     private Integer taskId;
 
-    @TableId("submit_time")
+    @TableField("submit_time")
     private LocalDateTime submitTime;
 
-    @TableId("submit_index3_id")
+    @TableField("evaluate_index3_id")
     private Integer index3Id;
 
-    @TableId("submit_content")
-    private String content;
+    @TableField("submit_content")
+    private String content;  // 单选/多选的结果
 
-    @TableId("submit_is_locked")
+    @TableField("submit_is_locked")
     private Integer isLocked;
-
-    @TableField("selected")
-    private String selected;  // 单选/多选的结果
 
     @TableField("score")
     private Integer score;  // index3问题对应的得分

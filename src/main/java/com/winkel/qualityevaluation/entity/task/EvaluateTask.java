@@ -7,6 +7,7 @@ package com.winkel.qualityevaluation.entity.task;
   @Date 2022-03-16 11:31
   */
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -26,7 +27,7 @@ import java.time.LocalDateTime;
 @TableName("evaluatetask")
 public class EvaluateTask {
 
-    @TableId("evaluate_task_id")
+    @TableId(value = "evaluate_task_id", type = IdType.INPUT)
     private Integer id;  //评估
 
     @TableField("school_code")
