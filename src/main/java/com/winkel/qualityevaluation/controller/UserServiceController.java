@@ -17,11 +17,15 @@ import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.JWTUtil;
+import com.winkel.qualityevaluation.util.OssUtil;
+import com.winkel.qualityevaluation.util.UploadResult;
 import com.winkel.qualityevaluation.vo.SubmitVo;
 import com.winkel.qualityevaluation.vo.UserVo;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -30,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/evaluate")
 public class UserServiceController {
@@ -55,6 +60,9 @@ public class UserServiceController {
 
     @Autowired
     private SubmitService submitService;
+
+    @Autowired
+    private OssUtil ossUtil;
 
     @GetMapping("/aaa")
     public User aaa() {
@@ -145,6 +153,21 @@ public class UserServiceController {
     }
 
     //园长上传文件(提交评估数据之后才能进行，修改task状态)
+    @PostMapping("/uploadEvidence")
+    public UploadResult uploadEvidence(@RequestParam("file") MultipartFile file) throws Exception {
+        if (file.getSize() < 1000000L) {
+            log.info("签名上传，当前文件大小 {} MB", file.getSize() >> 20);
+            return ossUtil.uploadWithSignature(file, OssUtil.EVIDENCE_SUFFIX);
+        } else {
+            log.info("分片上传，当前文件大小 {} MB", file.getSize() >> 20);
+            return ossUtil.uploadWithMultipart(file, OssUtil.EVIDENCE_SUFFIX);
+        }
+    }
+
+    @GetMapping("/download")
+    public String download(@RequestParam("fileUrl") String fileUrl) {
+        return ossUtil.downloadWithBreakpoint(fileUrl, null);
+    }
 
     //园长下载文件
 
@@ -168,6 +191,7 @@ public class UserServiceController {
 
     @Test
     public void test() {
+        System.out.println(547115 >> 20);
     }
 
 
