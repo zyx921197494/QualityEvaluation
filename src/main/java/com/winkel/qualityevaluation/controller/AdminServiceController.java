@@ -17,8 +17,10 @@ import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
+import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.ResponseUtil;
 import com.winkel.qualityevaluation.vo.SubmitVo;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
+@Slf4j
 public class AdminServiceController {
 
     @Autowired
@@ -167,16 +170,15 @@ public class AdminServiceController {
         boolean[] success = new boolean[5];
         List<School> schoolList = schoolService.list(new QueryWrapper<School>().eq("school_location_code", locationCode));
         ArrayList<EvaluateTask> taskList = new ArrayList<>(schoolList.size());
+        Integer currentCycle = taskService.getCurrentCycle(schoolList.get(0).getLocationCode().substring(0, 6) + "000000") + 1;
         for (School school : schoolList) {
-            System.out.println(school.getLocationCode());
-            Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000") + 1;
             taskList.add(new EvaluateTask()
                     .setSchoolCOde(school.getCode())
                     .setEvaluateId(1)
                     .setName("自评")
                     .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
                     .setCycle(currentCycle)
-                    .setStatus(0)
+                    .setStatus(Const.TASK_NOT_START)
                     .setType(1)
                     .setIsLocked(0));
         }
@@ -196,42 +198,11 @@ public class AdminServiceController {
         }
         //开启新周期
         if (success[0] == success[1] == success[2] == success[3] == success[4]) {
+            log.info("启动 {} 幼儿园第 {} 周期的教学质量评估", locationCode, currentCycle);
             return taskService.startCycle(locationCode);
-        } else {
-            return false;
         }
+        return false;
     }
-
-    //提交评估问题及附件 todo 附件
-    @PostMapping("/submitEvaluation")
-    public boolean submitEvaluation(@RequestBody List<SubmitVo> submitVos) {  // , @RequestParam("files")MultipartFile[] files
-        List<EvaluateSubmit> list = new ArrayList<>(submitVos.size());
-
-        for (SubmitVo submitVo : submitVos) {
-            int score = 0;
-            int type = submitVo.getType();
-            String content = submitVo.getContent();
-            if (type == 1 && "A".equalsIgnoreCase(content)) {
-                score = 20;
-            } else if (type == 2) {
-                if ("B".equalsIgnoreCase(content)) score = 10;
-                else if ("C".equalsIgnoreCase(content)) score = 20;
-                else if ("D".equalsIgnoreCase(content)) score = 30;
-            } else if (type == 3) {
-                score = submitVo.getContent().length() * 10;
-            }
-            list.add(new EvaluateSubmit()
-                    .setTaskId(submitVo.getTaskId())
-                    .setIndex3Id(submitVo.getIndex3Id())
-                    .setContent(content)
-                    .setScore(score)
-                    .setSubmitTime(LocalDateTime.now())
-                    .setIsLocked(0));
-        }
-
-        return submitService.saveBatch(list);
-    }
-
 
 
     //定义评价任务
@@ -256,10 +227,9 @@ public class AdminServiceController {
     //导出自评、督评、复评账号
 
 
-
     @Test
     public void test() {
-        System.out.println(taskService==null);
+        System.out.println(taskService == null);
         System.out.println(taskService.getCurrentCycle("3100000000") + 1);
     }
 

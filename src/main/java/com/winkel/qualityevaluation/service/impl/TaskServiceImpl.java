@@ -22,4 +22,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskDao, EvaluateTask> implemen
     public Integer getCurrentCycle(String locationCode) {
         return taskDao.selectCurrentCycle(locationCode);
     }
+
+    @Override
+    public Integer getTaskIdByUserId(String userId, Integer taskType) {
+        return taskDao.selectTaskIdByUserId(userId,taskType);
+    }
 }

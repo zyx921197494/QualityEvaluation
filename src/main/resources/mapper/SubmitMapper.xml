@@ -13,4 +13,18 @@
         <result column="score" property="score"/>
     </resultMap>
 
+    <select id="selectALlSubmitByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateSubmit">
+        select evaluatesubmit.submit_id, evaluatesubmit.submit_is_locked
+        from evaluatetask,
+             user,
+             tschool,
+             evaluatecycle,
+             evaluatesubmit
+        where user.id = #{id}
+          and user.school_code = evaluatetask.school_code = tschool.school_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and evaluatetask.task_cycle = evaluatecycle.cycle_current
+          and evaluatetask.evaluate_task_id = evaluatesubmit.evaluate_task_id
+    </select>
+
 </mapper>

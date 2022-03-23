@@ -12,4 +12,6 @@ public interface TaskDao extends BaseMapper<EvaluateTask> {
 
     Integer selectCurrentCycle(@Param("locationCode") String locationCode);
 
+    Integer selectTaskIdByUserId(@Param("id") String userId, @Param("type") Integer taskType);
+
 }

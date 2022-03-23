@@ -9,4 +9,6 @@ public interface TaskService extends IService<EvaluateTask> {
 
     Integer getCurrentCycle(String locationCode);
 
+    Integer getTaskIdByUserId(String userId, Integer taskType);
+
 }

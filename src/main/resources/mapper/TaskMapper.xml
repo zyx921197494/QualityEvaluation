@@ -29,5 +29,18 @@
         where cycle_county_location_code = #{locationCode}
     </select>
 
+    <select id="selectTaskIdByUserId" resultType="java.lang.Integer">
+        select evaluate_task_id
+        from evaluatetask,
+             user,
+             tschool,
+             evaluatecycle
+        where user.id = #{id}
+          and user.school_code = evaluatetask.school_code = tschool.school_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and evaluatetask.task_cycle = evaluatecycle.cycle_current
+          and evaluatetask.task_type = #{type}
+    </select>
+
 
 </mapper>

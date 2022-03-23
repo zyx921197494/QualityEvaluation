@@ -1,5 +1,6 @@
 package com.winkel.qualityevaluation.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class User implements UserDetails, Serializable {
 
     public static final long serialVersionUID = 8750539009428688836L;
@@ -23,6 +25,7 @@ public class User implements UserDetails, Serializable {
     private String id;
     private String username;
     private String password;
+    private String name;  // 用户真实姓名
     private String email;
     private String locationCode;
     private String schoolCode;

@@ -62,6 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
                         .setId(userId)
                         .setUsername(RandomUtil.randomNums(6))
                         .setPassword(RandomUtil.randomNums(8))
+                        .setName("")
                         .setLocationCode(location.getCode())
                         .setIsLocked(0)
                         .setCreateTime(LocalDateTime.now()));
@@ -83,6 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
                     .setId(userId)
                     .setUsername(RandomUtil.randomNums(6))
                     .setPassword(RandomUtil.randomNums(8))
+                    .setName("")
                     .setSchoolCode(school.getCode())
                     .setIsLocked(0)
                     .setCreateTime(LocalDateTime.now()));

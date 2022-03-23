@@ -43,13 +43,14 @@ public class UserController {
         int result = userService.checkPassword(username, password);
 
         if (result > 0) {
-            Integer isLocked = userService.getOne(new QueryWrapper<User>().select("is_locked").eq("username", username)).getIsLocked();
-            if (isLocked != 0) {
+            User user = userService.getOne(new QueryWrapper<User>().select("id", "is_locked").eq("username", username));
+            if (user.getIsLocked() != 0) {
                 throw new LockedException("账户已被锁定");
             }
             Map<String, Object> claims = new HashMap<>(3);
             claims.put("username", username);
             claims.put("password", password);
+            claims.put("id", user.getId());
 
             //数据库查找当前用户权限
             List<Authority> authorities = userService.getAuthorities(username);
