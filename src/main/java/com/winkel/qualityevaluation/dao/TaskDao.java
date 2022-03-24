@@ -14,4 +14,6 @@ public interface TaskDao extends BaseMapper<EvaluateTask> {
 
     Integer selectTaskIdByUserId(@Param("id") String userId, @Param("type") Integer taskType);
 
+    EvaluateTask selectTaskByUserId(@Param("id") String userId, @Param("type") Integer taskType);
+
 }

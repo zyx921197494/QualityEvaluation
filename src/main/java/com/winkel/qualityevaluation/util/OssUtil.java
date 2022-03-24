@@ -8,15 +8,14 @@ package com.winkel.qualityevaluation.util;
 
 import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.*;
-import com.winkel.qualityevaluation.config.oss.GetObjectProgressListener;
 import com.winkel.qualityevaluation.config.oss.OSSConfig;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
@@ -67,7 +66,7 @@ public class OssUtil {
         // 分片上传事件的唯一标识
         String uploadId = uploadResult.getUploadId();
         List<PartETag> partETags = new ArrayList<>();
-        final long partSize = 1024 * 1024L;  // 1MB
+        final long partSize = 3 * 1024 * 1024L;  // 3MB
         try {
             File file = multifile2File(uploadFile);
 
@@ -96,7 +95,7 @@ public class OssUtil {
             // 逐一验证每个分片的有效性。当所有的数据分片验证通过后，把这些分片组合成一个完整的文件
             CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(config.getBucketName(), filePath, uploadId, partETags);
             // 完成分片上传
-            CompleteMultipartUploadResult completeResult = ossClient.completeMultipartUpload(completeRequest);
+            ossClient.completeMultipartUpload(completeRequest);
 //        completeRequest.setCallback();
 //        System.out.println(completeResult.getLocation());  // 完整路径
 //        System.out.println(config.getUrlPrefix() + filePath);  // 完整路径
@@ -105,7 +104,7 @@ public class OssUtil {
         } catch (Exception e) {
             return new UploadResult()
                     .setStatus(UploadStatus.ERROR.getStatus())
-                    .setMsg("失败");
+                    .setMsg("上传到OSS时出错");
         }
 
         return new UploadResult()
@@ -152,7 +151,7 @@ public class OssUtil {
         } catch (Exception e) {
             return new UploadResult()
                     .setStatus(UploadStatus.ERROR.getStatus())
-                    .setMsg("失败");
+                    .setMsg("上传到OSS时出错");
         }
 
         //上传成功
@@ -164,30 +163,67 @@ public class OssUtil {
     }
 
 
-    public String downloadWithBreakpoint(String fileUrl, String localpath) {  // 这里的fileUrl完整路径不能包括BucketName
-        String defaultpath = "F:\\";  // 默认下载到的本地路径
+    /**
+     * desc: 断点续传下载 分片大小为2MB
+     * params: [fileUrl, localpath]
+     * return: boolean
+     * exception:
+     **/
+    public boolean downloadWithBreakpoint(String fileUrl, String localpath) {  // 这里的fileUrl完整路径不能包括BucketName
+        String defaultpath = "C:\\Users\\Public\\Downloads\\";  // 默认下载到的本地路径
         // 从OSS路径获取OSS文件名
         String[] split = fileUrl.split("/");
         String filename = split[split.length - 1];
 
         String path = StringUtils.isBlank(localpath) ? defaultpath + filename : localpath + filename;
         File file = new File(path);
-        System.out.println("fileUrl = " + fileUrl);
 
         // 这里的fileUrl完整路径不能包括BucketName
-        DownloadFileRequest request = new DownloadFileRequest(config.getBucketName(),fileUrl);//withProgressListener(new GetObjectProgressListener());
+        DownloadFileRequest request = new DownloadFileRequest(config.getBucketName(), fileUrl);//withProgressListener(new GetObjectProgressListener());
         System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
         request.setDownloadFile(file.getAbsolutePath());
-        request.setPartSize(1024L);
-        request.setTaskNum(1);
+        request.setPartSize(2 * 1024 * 1024L);
+        request.setTaskNum(3);
         request.setEnableCheckpoint(true);
         try {
             ossClient.downloadFile(request);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            return "下载失败";
+            return false;
         }
-        return "下载成功";
+        return true;
+    }
+
+    /**
+     * desc: 小文件直接下载
+     * params: [fileUrl, localpath]
+     * return: boolean
+     * exception:
+     **/
+    public boolean downloadSimple(String fileUrl, String localpath) {
+        String defaultpath = "C:\\Users\\Public\\Downloads\\";
+        // 从OSS路径获取OSS文件名
+        String[] split = fileUrl.split("/");
+        String filename = split[split.length - 1];
+
+        String path = StringUtils.isBlank(localpath) ? defaultpath + filename : localpath + filename;
+        try {
+            ossClient.getObject(new GetObjectRequest(config.getBucketName(), fileUrl), new File(path));
+
+        } catch (OSSException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public long getFileSize(String filename) {
+        SimplifiedObjectMeta objectMeta = ossClient.getSimplifiedObjectMeta(config.getBucketName(), filename);
+        return objectMeta.getSize();
+    }
+
+
+    public boolean isExist(String filename) {
+        return ossClient.doesObjectExist(config.getBucketName(), filename);
     }
 
 
@@ -195,7 +231,7 @@ public class OssUtil {
         return "file/" + System.currentTimeMillis() + RandomUtils.nextInt(100, 999) + "." + StringUtils.substringAfterLast(filename, ".");
     }
 
-    public boolean checkFileType(MultipartFile file, String[] suffixes) {
+    private boolean checkFileType(MultipartFile file, String[] suffixes) {
         for (String type : suffixes) {
             if (StringUtils.equalsIgnoreCase(StringUtils.substringAfterLast(file.getOriginalFilename(), "."), type)) {
                 return true;

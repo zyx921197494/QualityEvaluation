@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,13 +26,13 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
 @TableName("evaluatetask")
-public class EvaluateTask {
+public class EvaluateTask implements Serializable {
 
     @TableId(value = "evaluate_task_id", type = IdType.INPUT)
     private Integer id;  //评估
 
     @TableField("school_code")
-    private String schoolCOde;  //评估的学校
+    private String schoolCode;  //评估的学校
 
     @TableField("evaluate_task_name")
     private String name;  //任务名
@@ -49,7 +50,7 @@ public class EvaluateTask {
     private String content;
 
     // 评估任务的状态：
-    // 自评->未开始、评估中、数据已提交、报告已提交(自评完成)
+    // 自评->未开始、评估中、数据已提交、报告已提交(自评完成)、报告审核通过、报告审核未通过
     // 督评->未开始、评估中、数据已提交、报告已提交、报告审核通过(督评完成)、报告审核未通过
     @TableField("task_status")
     private Integer status;

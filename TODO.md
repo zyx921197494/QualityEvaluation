@@ -16,6 +16,7 @@
 9. OSS OSSException指服务器端异常，它来自于对服务器错误信息的解析。OSSException包含OSS返回的错误码和错误信息，便于定位问题，并做出适当的处理。继承自RuntimeException
 10. OSS createOSSException：
 11. FileNotFoundException：系统找不到指定的路径
+12. IllegalArgumentException: argument type mismatch 某个实体类的ID策略有问题
    
 ```java
    @ControllerAdvice

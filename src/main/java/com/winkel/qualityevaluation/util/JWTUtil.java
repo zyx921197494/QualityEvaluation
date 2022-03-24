@@ -68,7 +68,7 @@ public class JWTUtil {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss:mm");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         result.put("expiration", formatter.format(expDate));
-        result.put("id",claims.get("id"));
+        result.put("id", claims.get("id"));
         return result;
     }
 
@@ -129,10 +129,10 @@ public class JWTUtil {
             String username = (String) parseJWT(jwt).getBody().get("username");
             String password = (String) parseJWT(jwt).getBody().get("password");
             String id = (String) parseJWT(jwt).getBody().get("id");
-            if(StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)){
+            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password) && StringUtils.isNotBlank(id)) {
                 return new User(username, password).setId(id);
             }
-         throw new TokenParseException("解析Token失败");
+            throw new TokenParseException("解析Token失败");
         }
         throw new TokenParseException("解析Token失败");
     }

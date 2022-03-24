@@ -50,7 +50,7 @@ public class JWTAuthenticationProvider implements AuthenticationProvider {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getDetails();
         Integer isLocked = userService.getOne(new QueryWrapper<User>().select("is_locked").eq("username", user.getUsername())).getIsLocked();
         if (isLocked != 0) {
-            throw new LockedException("22222222账户已被锁定");
+            throw new LockedException("账户已被锁定");
         }
 
         UserDetails dbUser = userDetailsService.loadUserByUsername(jwtUser.getUsername());

@@ -10,26 +10,18 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
-import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
-import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.ResponseUtil;
-import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -173,7 +165,7 @@ public class AdminServiceController {
         Integer currentCycle = taskService.getCurrentCycle(schoolList.get(0).getLocationCode().substring(0, 6) + "000000") + 1;
         for (School school : schoolList) {
             taskList.add(new EvaluateTask()
-                    .setSchoolCOde(school.getCode())
+                    .setSchoolCode(school.getCode())
                     .setEvaluateId(1)
                     .setName("自评")
                     .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
@@ -218,7 +210,7 @@ public class AdminServiceController {
 
     //重启评估(解锁submit，修改对应task status)
     @PostMapping("/resetEvaluation")
-    public void resetEvaluation(@RequestParam String evaluateSubmitId) {
+    public void resetEvaluation(@RequestParam("type") Integer type,@RequestBody List<String> schoolCodeList) {
 
     }
 

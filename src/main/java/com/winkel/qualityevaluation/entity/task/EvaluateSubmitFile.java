@@ -6,6 +6,7 @@ package com.winkel.qualityevaluation.entity.task;
   @Date 2022-03-19 16:41
   */
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -25,11 +26,11 @@ import java.time.LocalDateTime;
 @TableName("evaluatesubmitfiles")
 public class EvaluateSubmitFile {
 
-    @TableId("submit_file_id")
+    @TableId(value = "submit_file_id", type = IdType.INPUT)
     private Integer id;
 
-    @TableField("submit_id")
-    private Integer submitId;
+    @TableField("evaluate_task_id")
+    private Integer taskId;
 
     @TableField("submit_file_name")
     private String fileName;

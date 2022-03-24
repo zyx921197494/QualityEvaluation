@@ -21,10 +21,17 @@ public class ResponseUtil {
 
     private String message;
 
+
     private Object data;
 
     public static ResponseUtil response(int statusCode, String message, Object data) {
        return new ResponseUtil(statusCode,message, data);
     }
+
+    public ResponseUtil(int statusCode, String message) {
+        this.statusCode = statusCode;
+        this.message = message;
+    }
+
 
 }

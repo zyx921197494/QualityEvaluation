@@ -13,8 +13,8 @@ public class Const {
     public final static Integer TASK_IN_EVALUATION = 2;
     public final static Integer TASK_DATA_SUBMITTED = 3;
     public final static Integer TASK_REPORT_SUBMITTED = 4;
-    public final static Integer TASK_REPORT_ACCEPTED = 5;
-    public final static Integer TASK_REPORT_REFUSED = 6;
+    public final static Integer TASK_REPORT_REFUSED = 5;
+    public final static Integer TASK_REPORT_ACCEPTED = 6;
 
     // 任务种类
     public final static Integer TASK_TYPE_SELF = 1;

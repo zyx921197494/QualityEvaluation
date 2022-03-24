@@ -5,7 +5,7 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile">
         <id column="submit_file_id" property="id"/>
-        <result column="submit_id" property="submitId"/>
+        <result column="evaluate_task_id" property="taskId"/>
         <result column="submit_file_path" property="filePath"/>
         <result column="submit_file_name" property="fileName"/>
         <result column="submit_file_size" property="size"/>
