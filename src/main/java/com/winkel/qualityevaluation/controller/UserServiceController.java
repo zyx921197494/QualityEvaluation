@@ -6,10 +6,8 @@ package com.winkel.qualityevaluation.controller;
   @Date 2022-03-14 14:43
   */
 
-import com.aliyun.oss.model.SelectObjectRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.winkel.qualityevaluation.config.oss.OSSConfig;
 import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
@@ -21,17 +19,15 @@ import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
+import com.winkel.qualityevaluation.vo.Index3Vo;
 import com.winkel.qualityevaluation.vo.SubmitVo;
 import com.winkel.qualityevaluation.vo.UserVo;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.time.LocalDateTime;
@@ -125,7 +121,7 @@ public class UserServiceController {
     }
 
     //园长/教师提交评估问题答案(根据index3和selected(接受一个VO(taskId, index3Id, selected)计算得分，插入submit)
-    //提交评估数据及附件 todo 附件
+    //提交评估数据及附件 todo 覆盖问题回答
     @PostMapping("/submitEvaluation")
     public boolean submitEvaluation(@RequestBody List<SubmitVo> submitVos) {  // , @RequestParam("files")MultipartFile[] files
         List<EvaluateSubmit> list = new ArrayList<>(submitVos.size());
@@ -158,7 +154,7 @@ public class UserServiceController {
 
     //园长上传文件(提交评估数据之后才能进行，修改task状态)
     @PostMapping("/uploadEvidence")
-    public ResponseUtil uploadEvidence(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
+    public ResponseUtil uploadEvidence(HttpServletRequest request, @RequestParam("file") MultipartFile file){
         User user = getTokenUser(request);
         Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
         if (!Objects.equals(taskService.getOne(new QueryWrapper<EvaluateTask>().eq("evaluate_task_id", taskId)).getStatus(), Const.TASK_IN_EVALUATION)) {
@@ -207,7 +203,7 @@ public class UserServiceController {
 
     //园长上传自评报告
     @PostMapping("/uploadSelfReport")
-    public ResponseUtil uploadSelfReport(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
+    public ResponseUtil uploadSelfReport(HttpServletRequest request, @RequestParam("file") MultipartFile file){
         User user = getTokenUser(request);
         Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
         Integer taskStatus = taskService.getOne(new QueryWrapper<EvaluateTask>().eq("evaluate_task_id", taskId)).getStatus();
@@ -232,24 +228,40 @@ public class UserServiceController {
             result = ossUtil.uploadWithMultipart(file, OssUtil.REPORT_SUFFIX);
             log.info("分片上传报告，当前报告大小 {} MB", file.getSize() >> 20);
         }
+        EvaluateReportFile dbReportFile = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("task_id", taskId));
 
+        boolean isReWrite = dbReportFile != null;
         if (Objects.equals(result.getStatus(), UploadStatus.DONE.getStatus())) {
-            EvaluateReportFile reportFile = new EvaluateReportFile()
-                    .setTaskId(taskId)
-                    .setFileName(result.getFilename())
-                    .setFilePath(result.getUrl())
-                    .setSize((int) file.getSize())
-                    .setUploadTime(LocalDateTime.now())
-                    .setMemo(file.getOriginalFilename());
-            if (reportFileService.save(reportFile) &&
-                    taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_REPORT_SUBMITTED))) {  // 修改task为已提交报告状态
-                return new ResponseUtil(200, "上传报告成功");
+
+            if (isReWrite) {
+                if (reportFileService.update(new UpdateWrapper<EvaluateReportFile>().eq("report_file_id", dbReportFile.getId())
+                        .set("report_file_name", result.getFilename())
+                        .set("report_file_path", result.getUrl())
+                        .set("report_file_size", (int) file.getSize())
+                        .set("report_file_upload_time", LocalDateTime.now())
+                        .set("report_file_memo", file.getOriginalFilename()))
+                        && taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_REPORT_SUBMITTED))
+                        && ossUtil.deleteFile(dbReportFile.getFileName())) {  // 修改task为已提交报告状态
+                    return new ResponseUtil(200, "覆盖报告成功");
+                }
+                return new ResponseUtil(500, "报告记录更新数据库时出错");
+            } else {
+                EvaluateReportFile reportFile = new EvaluateReportFile()
+                        .setTaskId(taskId)
+                        .setFileName(result.getFilename())
+                        .setFilePath(result.getUrl())
+                        .setSize((int) file.getSize())
+                        .setUploadTime(LocalDateTime.now())
+                        .setMemo(file.getOriginalFilename());
+                if (reportFileService.save(reportFile) &&
+                        taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_REPORT_SUBMITTED))) {  // 修改task为已提交报告状态
+                    return new ResponseUtil(200, "上传报告成功");
+                }
+                return new ResponseUtil(500, "报告记录写入数据库时出错");
             }
-            return new ResponseUtil(500, "报告记录写入数据库时出错");
         }
 
         return new ResponseUtil(500, "上传报告时失败", result.getMsg());
-
     }
 
 
@@ -269,18 +281,45 @@ public class UserServiceController {
                 log.info("断点续传下载文件 {}", filename);
                 return new ResponseUtil(200, "下载成功");
             }
-            return new ResponseUtil(500, "下载失败");
         } else {
             if (ossUtil.downloadSimple(filename, null)) {
                 log.info("直接下载文件 {}", filename);
                 return new ResponseUtil(200, "下载成功");
             }
 
-            return new ResponseUtil(500, "下载失败");
         }
+        return new ResponseUtil(500, "下载失败");
     }
 
     // 园长导出评估数据
+    @GetMapping("/exportEvaluation")
+    public ResponseUtil exportEvaluation(HttpServletRequest request) throws Exception {
+        Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SELF);
+        List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
+
+        List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
+        for (EvaluateSubmit submit : submits) {
+            EvaluateIndex3 index = index3Service.getOne(new QueryWrapper<EvaluateIndex3>().eq("evaluate_index3_id",submit.getIndex3Id()));
+            index3VoList.add(new Index3Vo().setIndex3Name(index.getIndex3Name())
+                    .setIndex3Content(index.getIndex3Content())
+                    .setType(index.getType() == 1 ? "判断" : index.getType() == 2 ? "单选" : "多选")
+                    .setMemo(index.getMemo())
+                    .setSubmitTime(submit.getSubmitTime())
+                    .setContent(submit.getContent()));
+        }
+
+        String directoryPath = "C:\\Users\\Public\\Downloads\\";
+        File path = new File(directoryPath);
+        File file = new File(directoryPath + "评估数据.xlsx");
+
+        if (path.isDirectory()) {  // 路径为目录则创建Excel文件
+            ossUtil.downloadSimple("评估数据.xlsx", directoryPath);
+            log.info("下载文件模板文件 评估数据.xlsx");
+        }
+        System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
+        ExcelUtil.writeExcel(index3VoList, file.getAbsolutePath(), true);
+        return new ResponseUtil(500, "导出评估数据文件时成功");
+    }
 
     // 园长/督评组长导出评估证据文件 目前只能园长下载
     @GetMapping("/exportEvidence")
@@ -308,7 +347,7 @@ public class UserServiceController {
             count++;
         }
         if (count == files.size()) return new ResponseUtil(200, "下载证据文件成功");
-        return new ResponseUtil(500, "下载证据文件成功");
+        return new ResponseUtil(500, "下载证据文件失败");
     }
 
 
@@ -346,8 +385,8 @@ public class UserServiceController {
         User user = getTokenUser(request);
         List<Authority> authorities = userService.getAuthorities(user.getUsername());
         for (Authority authority : authorities) {
-            if (authority.getAuthority().equalsIgnoreCase("ROLE_EVALUATE_SELF"))
-                return Const.TASK_TYPE_SELF;  //前 ROLE_EVALUATE_LEADER_SELF
+            if (authority.getAuthority().equalsIgnoreCase("ROLE_EVALUATE_SELF")) //前 ROLE_EVALUATE_LEADER_SELF
+                return Const.TASK_TYPE_SELF;
             else if (authority.getAuthority().equalsIgnoreCase("ROLE_EVALUATE_LEADER_SUPERVISOR"))
                 return Const.TASK_TYPE_SUPERVISOR;
         }

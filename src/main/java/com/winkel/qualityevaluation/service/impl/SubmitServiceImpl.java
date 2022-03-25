@@ -17,6 +17,6 @@ public class SubmitServiceImpl extends ServiceImpl<SubmitDao, EvaluateSubmit> im
 
     @Override
     public List<EvaluateSubmit> getALlSubmitByUserId(String userId) {
-        return submitDao.selectALlSubmitByUserId(userId);
+        return submitDao.selectAllSubmitByUserId(userId);
     }
 }

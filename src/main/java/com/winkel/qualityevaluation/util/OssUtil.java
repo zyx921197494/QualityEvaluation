@@ -216,6 +216,16 @@ public class OssUtil {
         return true;
     }
 
+
+    public boolean deleteFile(String filename) {
+        try {
+            ossClient.deleteObject(config.getBucketName(), filename);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
     public long getFileSize(String filename) {
         SimplifiedObjectMeta objectMeta = ossClient.getSimplifiedObjectMeta(config.getBucketName(), filename);
         return objectMeta.getSize();

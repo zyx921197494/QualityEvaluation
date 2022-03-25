@@ -10,8 +10,10 @@ package com.winkel.qualityevaluation.util;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.winkel.qualityevaluation.entity.School;
+import com.winkel.qualityevaluation.exception.ExcelException;
 import lombok.SneakyThrows;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;
@@ -92,36 +94,44 @@ public class ExcelUtil {
 //        workbook.close();
 //    }
 
-    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) throws Exception {
-        OutputStream out;
-        File file = new File(filePath);
-        Workbook workbook = getWorkbook(file);
-        Sheet sheet = workbook.getSheetAt(0);
-        int begin = 0;
-        // 添加表头
-        if (writeTitle) {
-            ++begin;
-            Field[] fields = list.get(0).getClass().getDeclaredFields();
-            Row title = sheet.createRow(0);
-            for (int i = 0; i < fields.length; i++) {
-                Cell cell = title.createCell(i);
-                cell.setCellValue(fields[i].getName());
+    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) throws InvalidFormatException {
+        try {
+            OutputStream out;
+            File file = new File(filePath);
+            Workbook workbook = getWorkbook(file);
+            Sheet sheet = workbook.getSheetAt(0);
+            int begin = 0;
+            // 添加表头
+            if (writeTitle) {
+                ++begin;
+                Field[] fields = list.get(0).getClass().getDeclaredFields();
+                Row title = sheet.createRow(0);
+                for (int i = 0; i < fields.length; i++) {
+                    Cell cell = title.createCell(i);
+                    cell.setCellValue(fields[i].getName());
+                }
             }
-        }
 
-        for (int i = 0; i < list.size(); i++) { // 每个对象
-            Row row = sheet.createRow(i + begin);
-            T bean = list.get(i);
-            Field[] fields = bean.getClass().getDeclaredFields();
-            for (int j = 0; j < fields.length; j++) { // 对象中的每个属性
-                Cell cell = row.createCell(j);
-                fields[j].setAccessible(true);
-                cell.setCellValue(fields[j].get(bean).toString());
+            for (int i = 0; i < list.size(); i++) { // 每个对象
+                Row row = sheet.createRow(i + begin);
+                T bean = list.get(i);
+                Field[] fields = bean.getClass().getDeclaredFields();
+                for (int j = 0; j < fields.length; j++) { // 对象中的每个属性
+                    Cell cell = row.createCell(j);
+                    fields[j].setAccessible(true);
+                    cell.setCellValue(fields[j].get(bean).toString());
+                }
             }
-        }
 
-        out = new FileOutputStream(filePath);
-        workbook.write(out);
+            out = new FileOutputStream(filePath);
+            workbook.write(out);
+        } catch (IOException e) {
+            throw new ExcelException("写入Excel时发生IO异常");
+        } catch (IllegalAccessException e) {
+            throw new ExcelException("写入Excel时读写权限异常");
+        } catch (Exception e) {
+            throw new RuntimeException("写入Excel发生未知异常");
+        }
 
     }
 
@@ -152,7 +162,7 @@ public class ExcelUtil {
     @SneakyThrows
     @Test
     public void test() {
-        System.out.println(readListFromExcel("F:\\", "school.xlsx", "Sheet1", School.class));
+//        System.out.println(readListFromExcel("F:\\", "school.xlsx", "Sheet1", School.class));
 
         List<School> list = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
@@ -168,7 +178,7 @@ public class ExcelUtil {
                     .setIsGenerallyBeneficial(1)
             );
         }
-//        writeExcel(list, "F:\\school.xlsx", true);
+        writeExcel(list, "C:\\Users\\Public\\Downloads\\demo.xlsx", true);
 
     }
 

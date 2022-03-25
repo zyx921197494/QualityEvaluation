@@ -10,7 +10,6 @@ import java.util.List;
 @Mapper
 public interface SubmitDao extends BaseMapper<EvaluateSubmit> {
 
-    List<EvaluateSubmit> selectALlSubmitByUserId(@Param("id") String userId);
-
+    List<EvaluateSubmit> selectAllSubmitByUserId(@Param("id") String userId);
 
 }

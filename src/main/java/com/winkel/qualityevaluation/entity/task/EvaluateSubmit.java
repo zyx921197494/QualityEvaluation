@@ -16,6 +16,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,7 +25,7 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
 @TableName("evaluatesubmit")
-public class EvaluateSubmit {
+public class EvaluateSubmit implements Serializable {
 
     @TableId(value = "submit_id",type = IdType.INPUT)
     private Integer id;

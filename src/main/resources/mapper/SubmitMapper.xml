@@ -13,7 +13,7 @@
         <result column="score" property="score"/>
     </resultMap>
 
-    <select id="selectALlSubmitByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateSubmit">
+    <select id="selectAllSubmitByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateSubmit">
         select evaluatesubmit.submit_id, evaluatesubmit.submit_is_locked
         from evaluatetask,
              user,

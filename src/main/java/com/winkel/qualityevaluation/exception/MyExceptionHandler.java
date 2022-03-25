@@ -52,5 +52,10 @@ public class MyExceptionHandler implements ResponseBodyAdvice<Object> {
         return ResponseUtil.response(403, e.getMessage(), null);
     }
 
+    @ExceptionHandler(ExcelException.class)
+    public ResponseUtil handleExcelException(Exception e) {
+        return ResponseUtil.response(500, e.getMessage(), null);
+    }
+
 
 }
