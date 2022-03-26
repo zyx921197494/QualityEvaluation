@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -19,5 +20,10 @@ public interface UserService extends IService<User> {
 
     boolean createNotRegisterUsers(String locationCode, int num);
 
-    boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd);
+    boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd, Integer currentCycle);
+
+    boolean unlockSelfUserByLocationCode(String locationCode);
+
+    boolean unlockUserBySchoolCode(String schoolCode, Integer type);
+
 }

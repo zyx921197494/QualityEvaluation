@@ -55,11 +55,15 @@ public class School {
 
     @JSONField(name = "isRegister")
     @TableField("is_register")
-    private int isRegister;  //是否在册
+    private Integer isRegister;  //是否在册
 
     @JSONField(name = "isGenerallyBeneficial")
     @TableField("is_generally_beneficial")
-    private int isGenerallyBeneficial;  //是否普惠
+    private Integer isGenerallyBeneficial;  //是否普惠
+
+    @JSONField(name = "isLocked")
+    @TableField("is_locked")
+    private Integer isLocked;  // 是否锁定
 
 
 }

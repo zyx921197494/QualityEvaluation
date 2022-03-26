@@ -180,7 +180,6 @@ public class OssUtil {
 
         // 这里的fileUrl完整路径不能包括BucketName
         DownloadFileRequest request = new DownloadFileRequest(config.getBucketName(), fileUrl);//withProgressListener(new GetObjectProgressListener());
-        System.out.println("file.getAbsolutePath() = " + file.getAbsolutePath());
         request.setDownloadFile(file.getAbsolutePath());
         request.setPartSize(2 * 1024 * 1024L);
         request.setTaskNum(3);

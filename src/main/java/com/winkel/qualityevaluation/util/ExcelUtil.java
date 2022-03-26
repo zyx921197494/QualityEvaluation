@@ -11,6 +11,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.exception.ExcelException;
+import com.winkel.qualityevaluation.vo.Index3Vo;
+import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.SneakyThrows;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -20,6 +22,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class ExcelUtil {
@@ -64,37 +67,14 @@ public class ExcelUtil {
         return JSONArray.parseArray(resultMapList.toString(), tClass);
     }
 
-//    static <T> void writeToExcel(List<T> list, String path, boolean writeTitle) throws Exception {
-//        if (list == null || list.size() == 0) return;
-//        Workbook workbook = new HSSFWorkbook();
-//        int offset = writeTitle ? 1 : 0;
-//        FileOutputStream fos = null;
-//
-//        Sheet sheet = workbook.createSheet();
-//        for (int i = 0; i < list.size() + offset; ++i) {
-//            if (writeTitle && i == 0) {
-//                createTitle(list, sheet);
-//                continue;
-//            }
-//            Row row = sheet.createRow(i);
-//            T bean = list.get(i - offset);
-//            Field[] fields = bean.getClass().getDeclaredFields();
-//            for (int j = 0; j < fields.length; j++) {
-//                Field field = fields[j];
-//                field.setAccessible(true);
-//                Cell cell = row.createCell(j);
-//                //Date,Calender都可以 使用  +"" 操作转成字符串
-//                cell.setCellValue(field.get(bean) + "");
-//            }
-//        }
-//         fos = new FileOutputStream(path);
-//        workbook.write(fos);
-//
-//        fos.close();
-//        workbook.close();
-//    }
 
-    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) throws InvalidFormatException {
+    /**
+     * desc:
+     * params: [list, filePath, writeTitle] filePath必须指定文件
+     * return: void
+     * exception:
+     **/
+    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) {
         try {
             OutputStream out;
             File file = new File(filePath);
@@ -119,7 +99,8 @@ public class ExcelUtil {
                 for (int j = 0; j < fields.length; j++) { // 对象中的每个属性
                     Cell cell = row.createCell(j);
                     fields[j].setAccessible(true);
-                    cell.setCellValue(fields[j].get(bean).toString());
+                    if (fields[j].get(bean) == null) cell.setCellValue("");
+                    else cell.setCellValue(fields[j].get(bean).toString());
                 }
             }
 
@@ -164,21 +145,19 @@ public class ExcelUtil {
     public void test() {
 //        System.out.println(readListFromExcel("F:\\", "school.xlsx", "Sheet1", School.class));
 
-        List<School> list = new ArrayList<>();
+        List<Index3Vo> list = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            list.add(new School()
-                    .setCode("666666" + i)
-                    .setName(String.valueOf(i))
-                    .setLocation("11")
-                    .setLocationCode("666")
-                    .setLocationTypeCode("4654")
-                    .setTypeCode("213132")
-                    .setHostCode("111")
-                    .setIsRegister(1)
-                    .setIsGenerallyBeneficial(1)
+            list.add(new Index3Vo().setContent("填的数据")
+                    .setSubmitTime(LocalDateTime.now())
+                    .setMemo("memo" + i)
+                    .setType("单选")
+                    .setIndex3Name("题目")
+                    .setIndex3id(i)
+                    .setIndex3Content("选项")
+
             );
         }
-        writeExcel(list, "C:\\Users\\Public\\Downloads\\demo.xlsx", true);
+        writeExcel(list, "C:\\Users\\Public\\Downloads\\评估数据.xlsx", true);
 
     }
 

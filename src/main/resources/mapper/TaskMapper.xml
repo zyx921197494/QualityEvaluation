@@ -5,7 +5,7 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.winkel.qualityevaluation.entity.task.EvaluateTask">
         <id column="evaluate_task_id" property="id"/>
-        <result column="school_code" property="schoolCOde"/>
+        <result column="school_code" property="schoolCode"/>
         <result column="evaluate_task_name" property="name"/>
         <result column="evaluate_id" property="evaluateId"/>
         <result column="evaluate_task_start_time" property="startTime"/>

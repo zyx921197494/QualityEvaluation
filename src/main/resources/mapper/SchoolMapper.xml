@@ -13,6 +13,7 @@
         <result column="school_host_code" property="hostCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="is_register" property="isRegister" javaType="java.lang.Integer" jdbcType="INTEGER"/>
         <result column="is_generally_beneficial" property="isGenerallyBeneficial" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        <result column="is_locked" property="isLocked"/>
     </resultMap>
 
 </mapper>

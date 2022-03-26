@@ -42,9 +42,6 @@ public class EvaluateSubmit implements Serializable {
     @TableField("submit_content")
     private String content;  // 单选/多选的结果
 
-    @TableField("submit_is_locked")
-    private Integer isLocked;
-
     @TableField("score")
     private Integer score;  // index3问题对应的得分
 

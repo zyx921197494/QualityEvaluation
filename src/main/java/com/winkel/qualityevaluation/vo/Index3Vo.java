@@ -17,9 +17,11 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 public class Index3Vo {
 
-    private String index3Name;
+    private Integer index3id;
 
-    private String index3Content;  //问题
+    private String index3Name;  // 问题
+
+    private String index3Content;  //选项
 
     private String type;  // 1判断(A好B坏 20分) 2单选(0、10、20、30分) 3多选(满分40分) 4文本
 

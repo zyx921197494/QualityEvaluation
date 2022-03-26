@@ -43,4 +43,7 @@ public class Const {
     public final static Integer ROLE_EVALUATE_LEADER_CITY = 13;
     public final static Integer ROLE_EVALUATE_LEADER_PROVINCE = 14;
 
+    public final static String TOKEN_HEADER = "Authorization";
+    public final static String STARTS_WITH = "Bearer ";
+
 }

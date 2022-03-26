@@ -9,25 +9,33 @@ package com.winkel.qualityevaluation.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.api.R;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
+import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.Const;
+import com.winkel.qualityevaluation.util.JWTUtil;
+import com.winkel.qualityevaluation.util.RandomUtil;
 import com.winkel.qualityevaluation.util.ResponseUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.*;
 
 @RestController
 @RequestMapping("/admin")
 @Slf4j
 public class AdminServiceController {
-
     @Autowired
     private UserService userService;
 
@@ -42,6 +50,9 @@ public class AdminServiceController {
 
     @Autowired
     private Index3Service index3Service;
+
+    @Autowired
+    private LocationService locationService;
 
     @GetMapping("/ccc")
     public User ddd() {
@@ -90,77 +101,145 @@ public class AdminServiceController {
         queryMap.put("is_register", isRegister);
         queryMap.put("is_generally_beneficial", isGB);
         QueryWrapper<School> wrapper = new QueryWrapper<School>().allEq(queryMap, false);
-        wrapper
-                .like("school_name", keyName)
-                .like("school_location", keyLocation)
-                .like("school_location_code", locationCode)
-                .likeRight("school_location_type_code", isCity != null && isCity == 1 ? 1 : 2);
-        if (schoolCode != null) {
-            wrapper.like("school_code", schoolCode);
+
+        if (StringUtils.isNotBlank(schoolCode)) wrapper.like("school_code", schoolCode);
+        if (StringUtils.isNotBlank(keyName)) wrapper.like("school_name", keyName);
+        if (StringUtils.isNotBlank(keyLocation)) wrapper.like("school_location", keyLocation);
+        if (StringUtils.isNotBlank(locationCode)) wrapper.like("school_location_code", locationCode);
+        if (isCity != null) wrapper.likeRight("school_location_type_code", isCity == 1 ? "1" : "2");
+
+        if (isPublic != null) {
+            return schoolService.page(page, isPublic == 1 ? wrapper.ne("school_host_code", "999") : wrapper.eq("school_host_code", "999"));
         }
-        return schoolService.page(page, isPublic != null && isPublic == 1 ? wrapper.ne("school_host_code", 999) : wrapper.eq("school_host_code", 999));
+        return schoolService.page(page, wrapper);
     }
 
     //7.查看、修改幼儿园信息
     // todo 同步修改其他评估数据
     @PostMapping("/updateSchool")
-    public boolean updateSchool(@RequestParam String schoolCode, String name, String location, String locationCode, String locationTypeCode, String typeCode, String hostCode, Integer isRegister, Integer isGB) {
-//        Map<String, Object> map = new HashMap<>(9);
-        UpdateWrapper<School> wrapper = new UpdateWrapper<School>().eq("school_code", schoolCode);
-        School school = new School()
-                .setCode(schoolCode)
-                .setName(name)
-                .setLocation(location)
-                .setLocationCode(locationCode)
-                .setLocationTypeCode(locationTypeCode)
-                .setTypeCode(typeCode)
-                .setHostCode(hostCode)
-                .setIsRegister(isRegister)
-                .setIsGenerallyBeneficial(isGB);
-        return schoolService.update(school, wrapper);
+    public ResponseUtil updateSchool(@RequestBody School school) {
+        if (StringUtils.isBlank(school.getCode())) {
+            return new ResponseUtil(500, "幼儿园编号不能为空");
+        }
+        UpdateWrapper<School> wrapper = new UpdateWrapper<School>().eq("school_code", school.getCode());
+        if (StringUtils.isNotBlank(school.getName())) wrapper.set("school_name", school.getName());
+        if (StringUtils.isNotBlank(school.getLocation())) wrapper.set("school_location", school.getLocation());
+        if (StringUtils.isNotBlank(school.getLocationCode()))
+            wrapper.set("school_location_code", school.getLocationCode());
+        if (StringUtils.isNotBlank(school.getLocationTypeCode()))
+            wrapper.set("school_location_type_code", school.getLocationTypeCode());
+        if (StringUtils.isNotBlank(school.getTypeCode())) wrapper.set("school_type_code", school.getTypeCode());
+        if (StringUtils.isNotBlank(school.getHostCode())) wrapper.set("school_host_code", school.getHostCode());
+        if (school.getIsRegister() != null) wrapper.set("is_register", school.getIsRegister());
+        if (school.getIsGenerallyBeneficial() != null)
+            wrapper.set("is_generally_beneficial", school.getIsGenerallyBeneficial());
+
+        if (schoolService.update(wrapper)) {
+            return new ResponseUtil(200, "修改幼儿园信息成功");
+        }
+        return new ResponseUtil(500, "修改幼儿园信息失败");
     }
 
     //8.未在册转为在册
-    @PostMapping("/registerSchool")
-    public boolean registerSchool(@RequestParam String schoolCode) {
-        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("is_register", 1));
+    @GetMapping("/registerSchool")
+    public ResponseUtil registerSchool(@RequestParam String schoolCode) {
+        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+        if (school == null) {
+            return new ResponseUtil(500, "对应的幼儿园不存在");
+        }
+        if (school.getIsLocked() == 1) {
+            return new ResponseUtil(500, "幼儿园归属地已发生更改，无法修改");
+        }
+        if (school.getIsRegister() == 1) {
+            return new ResponseUtil(500, "幼儿园已经为在册状态");
+        }
+        if (schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("is_register", 1))) {
+            return new ResponseUtil(200, "转在册成功");
+        }
+        return new ResponseUtil(500, "转在册失败");
     }
 
-    //9.幼儿园归属地修改 school_location_code前6位改为新县代码
-    @PostMapping("/changeSchoolLocation")
+    //9.幼儿园归属地修改 school_location_code改为区域代码(5级，最少3级)
+    @GetMapping("/changeSchoolLocation")
     public boolean changeSchoolLocation(@RequestParam String schoolCode, @RequestParam String locationCode) {
-        String oldCode = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode)).getLocationCode();
-        String newCode = locationCode.substring(0, 6) + oldCode.substring(6, 12);
-        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", newCode));
+        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
     }
 
     //12.省市县管理员修改本账号密码
-    @PostMapping("/changeAdminPassword")
-    public boolean changePassword(@RequestParam String userId, @RequestParam String newPwd) {
-        return userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd));
+    @GetMapping("/changeAdminPassword")
+    public ResponseUtil changePassword(HttpServletRequest request, @RequestParam("newPwd") String newPwd) {
+        String userId = getTokenUser(request).getId();
+        User user = userService.getOne(new QueryWrapper<User>().eq("id", userId).select("password"));
+        if (StringUtils.equals(newPwd, user.getPassword())) {
+            return new ResponseUtil(500, "旧密码不能和原密码相同");
+        }
+        if (userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd))) {
+            return new ResponseUtil(200, "修改密码成功");
+        }
+        return new ResponseUtil(500, "修改密码失败");
     }
 
-    //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评密码，密码由系统自动生成
-    @PostMapping("/changeUserPassword")
-    public boolean changeUserPassword(@RequestParam String schoolCode, @RequestParam Integer authorityId, @RequestParam String newPwd) {
-        return userService.changeUserPassword(schoolCode, authorityId, newPwd);
+    /**
+     * desc:
+     * params: [schoolCode, authorityId] authorityId：5--9对应五种账户类型
+     * return: boolean
+     * exception:
+     **/
+    //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评(3)密码，密码由系统自动生成
+    @GetMapping("/changeUserPassword")
+    public ResponseUtil changeUserPassword(@RequestParam String schoolCode, @RequestParam Integer authorityId) {
+        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+        Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
+
+        if (userService.changeUserPassword(schoolCode, authorityId, RandomUtil.randomString(8), currentCycle) &&
+                userService.changeUserPassword(schoolCode, authorityId + 5, RandomUtil.randomNums(8), currentCycle)) {
+            return new ResponseUtil(200, "更换评估密码成功");
+        }
+        return new ResponseUtil(200, "更换评估密码失败");
     }
 
     //4.删除幼儿园账号
     //todo 同时删除评估数据：代码删除 或 触发器
-    @PostMapping("/deleteUser")
-    public boolean deleteUser(@RequestParam String schoolCode) {
-        return userService.remove(new QueryWrapper<User>().eq("school_code", schoolCode));
+    @GetMapping("/deleteUser")
+    public ResponseUtil deleteUser(@RequestParam String schoolCode) {
+        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+        System.out.println("school = " + school);
+        if (school == null || school.getIsLocked() == 1) {
+            return new ResponseUtil(500, "幼儿园不存在或已删除");
+        }
+        String countyCode = school.getLocationCode().substring(0, 6) + "000000";
+        Integer currentCycle = taskService.getCurrentCycle(countyCode);
+        boolean s1 = schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("is_locked", 1));  // 锁定幼儿园记录
+        boolean s2 = userService.update(new UpdateWrapper<User>().eq("school_code", schoolCode).eq("cycle", currentCycle).set("is_locked", 1));  // 锁定当前周期的评估账号
+        boolean s3 = taskService.remove(new QueryWrapper<EvaluateTask>().eq("school_code", schoolCode).eq("task_cycle", currentCycle));  // 删除幼儿园当前周期的所有评估任务、记录、材料
+        if (s1 == s2 == s3) {
+            return new ResponseUtil(200, "删除幼儿园账号成功");
+        }
+        return new ResponseUtil(500, "删除幼儿园账号失败");
     }
 
     //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
     //冻结以往周期所有的督评、复评数据
     //督评、复评账号随周期更换
     @GetMapping("/startCycle")
-    public boolean startCycle(@RequestParam String locationCode) {
-        //todo 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
+    public ResponseUtil startCycle(@RequestParam String locationCode) {
+        // 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
+        Integer cycle = taskService.getCurrentCycle(locationCode);
+        List<School> schoolList = schoolService.list(new QueryWrapper<School>().likeRight("school_location_code", locationCode.substring(0, 6)));
+        for (School school : schoolList) {
+            if (school.getIsLocked() == 1) {  // 删除的幼儿园不参与新周期的评估
+                continue;
+            }
+            List<EvaluateTask> tasks = taskService.list(new QueryWrapper<EvaluateTask>().eq("school_code", school.getCode()).eq("task_cycle", cycle));
+            for (EvaluateTask task : tasks) {
+                if (!Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED)) {
+                    return new ResponseUtil(500, "县域内有幼儿园未完成全部评估任务");
+                }
+            }
+        }
+
+        // 生成评价任务
         boolean[] success = new boolean[5];
-        List<School> schoolList = schoolService.list(new QueryWrapper<School>().eq("school_location_code", locationCode));
         ArrayList<EvaluateTask> taskList = new ArrayList<>(schoolList.size());
         Integer currentCycle = taskService.getCurrentCycle(schoolList.get(0).getLocationCode().substring(0, 6) + "000000") + 1;
         for (School school : schoolList) {
@@ -188,13 +267,45 @@ public class AdminServiceController {
             }
             success[i - 1] = taskService.saveBatch(taskList);
         }
+        // 解锁县域内所有学校的自评账号，因为其不随周期变化而删除
+        boolean unlock = userService.unlockSelfUserByLocationCode(locationCode);
+
         //开启新周期
-        if (success[0] == success[1] == success[2] == success[3] == success[4]) {
+        if (success[0] == success[1] == success[2] == success[3] == success[4] && taskService.startCycle(locationCode) && unlock) {
             log.info("启动 {} 幼儿园第 {} 周期的教学质量评估", locationCode, currentCycle);
-            return taskService.startCycle(locationCode);
+            return new ResponseUtil(200, "成功启动 " + locationService.getOne(new QueryWrapper<Location>().eq("code", locationCode)).getName() + " 第 " + currentCycle + " 周期的教学质量评估");
         }
-        return false;
+        return new ResponseUtil(500, "开启新评估周期失败");
     }
+
+
+    /**
+     * @desc:
+     * params:
+     * @param schoolCodeList 重启评估的类型(5--9)：如重启自评
+     * @param type 幼儿园标识编码List
+     * @return: com.winkel.qualityevaluation.util.ResponseUtil
+     * @exception:
+     **/
+    @PostMapping("/resetEvaluation")
+    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer type) {
+        for (String schoolCode : schoolCodeList) {
+            School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+            Integer cycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
+            EvaluateTask task = taskService.getOne(new QueryWrapper<EvaluateTask>().eq("school_code", schoolCode).eq("task_cycle", cycle).eq("task_type", type - 4));
+
+            if (Objects.equals(task.getStatus(), Const.TASK_NOT_START) || task.getStatus() > Const.TASK_REPORT_SUBMITTED) {
+                return new ResponseUtil(403, "不能重启未开始或已通过的评估");
+            }
+
+            if (!(userService.unlockUserBySchoolCode(schoolCode, type) && taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", task.getId()).set("task_status", Const.TASK_IN_EVALUATION)))) {
+                return new ResponseUtil(500, "重启评估账号时错误");
+            }
+        }
+        return new ResponseUtil(200, "重启评估成功");
+    }
+
+    //导出各级用户
 
 
     //定义评价任务
@@ -206,17 +317,12 @@ public class AdminServiceController {
     //定义三级评价指标及对应各选项的分数
 
 
-    //导出评估数据
-
-    //重启评估(解锁submit，修改对应task status)
-    @PostMapping("/resetEvaluation")
-    public void resetEvaluation(@RequestParam("type") Integer type,@RequestBody List<String> schoolCodeList) {
-
-    }
-
     //审核省市县的复评意见书
 
     //导出自评、督评、复评账号
+    private User getTokenUser(HttpServletRequest request) {
+        return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));
+    }
 
 
     @Test

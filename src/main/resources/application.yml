@@ -14,8 +14,8 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**
   global-config:
     banner: false
-  configuration:
-    call-setters-on-nulls: false
+#  configuration:
+#    call-setters-on-nulls: false
 
 server:
   port: 8080

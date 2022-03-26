@@ -103,7 +103,18 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     @Override
-    public boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd) {
-        return userDao.updateUserPassword(schoolCode, authorityId, newPwd);
+    public boolean changeUserPassword(String schoolCode, Integer authorityId, String newPwd, Integer currentCycle) {
+        return userDao.updateUserPassword(schoolCode, authorityId, newPwd, currentCycle);
     }
+
+    @Override
+    public boolean unlockSelfUserByLocationCode(String locationCode) {
+        return userDao.unlockSelfUserByLocationCode(locationCode);
+    }
+
+    @Override
+    public boolean unlockUserBySchoolCode(String schoolCode, Integer type) {
+        return userDao.unlockUserBySchoolCode(schoolCode, type);
+    }
+
 }

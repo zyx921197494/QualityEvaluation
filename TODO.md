@@ -4,6 +4,8 @@
 
 二、Controller层接口权限限制 eg:@PreAuthorize
 
+超过评估时间、账号无法登陆 --> Spring定时任务
+
 三、全局异常捕获：
 1. SQLException：
 2. BatchUpdateException: Cannot add or update a child row: a foreign key constraint fails

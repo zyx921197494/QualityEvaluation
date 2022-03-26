@@ -19,8 +19,6 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = false)
 public class SubmitVo {
 
-    private Integer taskId;
-
     private Integer index3Id;
 
     private Integer type;
