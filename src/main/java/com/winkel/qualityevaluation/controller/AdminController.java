@@ -9,12 +9,10 @@ package com.winkel.qualityevaluation.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.api.R;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
-import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.Const;
@@ -28,14 +26,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.util.*;
 
 @RestController
 @RequestMapping("/admin")
 @Slf4j
-public class AdminServiceController {
+public class AdminController {
+
     @Autowired
     private UserService userService;
 
@@ -46,19 +43,7 @@ public class AdminServiceController {
     private TaskService taskService;
 
     @Autowired
-    private SubmitService submitService;
-
-    @Autowired
-    private Index3Service index3Service;
-
-    @Autowired
     private LocationService locationService;
-
-    @GetMapping("/ccc")
-    public User ddd() {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<User>().select("username", "password", "is_locked").eq("username", "user");
-        return userService.getOne(queryWrapper);
-    }
 
     @PostMapping("/createAdmins")
     public ResponseUtil createAdmins() {
@@ -92,7 +77,13 @@ public class AdminServiceController {
         return ResponseUtil.response(200, "创建未在册园账号失败", null);
     }
 
-    //6.按条件搜索幼儿园
+
+    /**
+     * desc: 按条件搜索幼儿园：学校标识码、名称关键字、位置关键字、地址码、城市/农村、是否公办、是否在册、是否普惠
+     * params: [schoolCode, keyName, keyLocation, locationCode, isCity, isPublic, isRegister, isGB, current, pageSize] current, pageSize：当前页、每页数量
+     * return: com.baomidou.mybatisplus.core.metadata.IPage<com.winkel.qualityevaluation.entity.School>
+     * exception:
+     **/
     @PostMapping("/schools")
     public IPage<School> schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer current, @RequestParam("pageSize") Integer pageSize) {
         IPage<School> page = new Page<>(current, pageSize);
@@ -114,7 +105,13 @@ public class AdminServiceController {
         return schoolService.page(page, wrapper);
     }
 
-    //7.查看、修改幼儿园信息
+
+    /**
+     * desc: 修改幼儿园信息
+     * params: [school]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     // todo 同步修改其他评估数据
     @PostMapping("/updateSchool")
     public ResponseUtil updateSchool(@RequestBody School school) {
@@ -140,7 +137,13 @@ public class AdminServiceController {
         return new ResponseUtil(500, "修改幼儿园信息失败");
     }
 
-    //8.未在册转为在册
+
+    /**
+     * desc: 未在册幼儿园转为在册
+     * params: [schoolCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     @GetMapping("/registerSchool")
     public ResponseUtil registerSchool(@RequestParam String schoolCode) {
         School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
@@ -159,13 +162,25 @@ public class AdminServiceController {
         return new ResponseUtil(500, "转在册失败");
     }
 
-    //9.幼儿园归属地修改 school_location_code改为区域代码(5级，最少3级)
+
+    /**
+     * desc: 幼儿园归属地修改 school_location_code改为区域代码(5级，最少3级)
+     * params: [schoolCode, locationCode]
+     * return: boolean
+     * exception:
+     **/
     @GetMapping("/changeSchoolLocation")
     public boolean changeSchoolLocation(@RequestParam String schoolCode, @RequestParam String locationCode) {
         return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
     }
 
-    //12.省市县管理员修改本账号密码
+
+    /**
+     * desc: 省市县管理员修改本账号密码
+     * params: [request, newPwd]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     @GetMapping("/changeAdminPassword")
     public ResponseUtil changePassword(HttpServletRequest request, @RequestParam("newPwd") String newPwd) {
         String userId = getTokenUser(request).getId();
@@ -179,13 +194,13 @@ public class AdminServiceController {
         return new ResponseUtil(500, "修改密码失败");
     }
 
+
     /**
-     * desc:
+     * desc: 县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评(3)密码，密码由系统自动生成
      * params: [schoolCode, authorityId] authorityId：5--9对应五种账户类型
      * return: boolean
      * exception:
      **/
-    //12.县级管理员更换幼儿园密码"：选择在册园/未在册园，填写幼儿园名称/标识码进行查询。选中一行中左侧的复选框，选择更换自评、督评、复评(3)密码，密码由系统自动生成
     @GetMapping("/changeUserPassword")
     public ResponseUtil changeUserPassword(@RequestParam String schoolCode, @RequestParam Integer authorityId) {
         School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
@@ -198,7 +213,13 @@ public class AdminServiceController {
         return new ResponseUtil(200, "更换评估密码失败");
     }
 
-    //4.删除幼儿园账号
+
+    /**
+     * desc: 删除幼儿园账号
+     * params: [schoolCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     //todo 同时删除评估数据：代码删除 或 触发器
     @GetMapping("/deleteUser")
     public ResponseUtil deleteUser(@RequestParam String schoolCode) {
@@ -218,9 +239,15 @@ public class AdminServiceController {
         return new ResponseUtil(500, "删除幼儿园账号失败");
     }
 
-    //县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
-    //冻结以往周期所有的督评、复评数据
-    //督评、复评账号随周期更换
+
+    /**
+     * desc: 县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
+     *       冻结以往周期所有的督评、复评数据
+     *       todo 校验是否督评、复评账号随周期更换
+     * params: [locationCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     @GetMapping("/startCycle")
     public ResponseUtil startCycle(@RequestParam String locationCode) {
         // 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
@@ -305,8 +332,9 @@ public class AdminServiceController {
         return new ResponseUtil(200, "重启评估成功");
     }
 
-    //导出各级用户
+    // todo 导出自评、督评、复评账号
 
+    // todo 审核省市县的复评意见书
 
     //定义评价任务
 
@@ -317,9 +345,9 @@ public class AdminServiceController {
     //定义三级评价指标及对应各选项的分数
 
 
-    //审核省市县的复评意见书
 
-    //导出自评、督评、复评账号
+
+
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));
     }

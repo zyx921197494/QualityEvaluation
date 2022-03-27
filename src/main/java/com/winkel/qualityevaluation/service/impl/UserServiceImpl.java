@@ -12,14 +12,12 @@ import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.UserService;
 import com.winkel.qualityevaluation.util.RandomUtil;
-import com.winkel.qualityevaluation.util.ResponseUtil;
 import com.winkel.qualityevaluation.vo.UserAuthority;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -114,7 +112,11 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
     @Override
     public boolean unlockUserBySchoolCode(String schoolCode, Integer type) {
-        return userDao.unlockUserBySchoolCode(schoolCode, type);
+        return userDao.unlockUserBySchoolCodeAndType(schoolCode, type);
     }
 
+    @Override
+    public boolean lockUserBySchoolCodeAndType(String schoolCode, Integer type) {
+        return userDao.lockUserBySchoolCodeAndType(schoolCode, type);
+    }
 }

@@ -56,11 +56,22 @@
           and user.cycle = evaluatecycle.cycle_current
     </update>
 
-    <update id="unlockUserBySchoolCode">
+    <update id="unlockUserBySchoolCodeAndType">
         update user, user_authority, tschool, evaluatecycle
         set user.is_locked = 0
         where user_authority.user_id = user.id
           and user_authority.authority_id in (#{type}, #{type} + 5)
+          and user.school_code = tschool.school_code
+          and tschool.school_code = #{schoolCode}
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and user.cycle = evaluatecycle.cycle_current
+    </update>
+
+    <update id="lockUserBySchoolCodeAndType">
+        update user, user_authority, tschool, evaluatecycle
+        set user.is_locked = 1
+        where user_authority.user_id = user.id
+          and user_authority.authority_id = #{type}
           and user.school_code = tschool.school_code
           and tschool.school_code = #{schoolCode}
           and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code

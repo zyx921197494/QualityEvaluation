@@ -9,6 +9,12 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 500MB
+  mail:
+    host: smtp.qq.com
+    username: 921197494@qq.com
+    password: qfbyauxfpwtlbbgg
+    properties:
+      map: { "mail.smtp.ssl.enable=true": "true" }
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**
@@ -19,3 +25,5 @@ mybatis-plus:
 
 server:
   port: 8080
+
+

@@ -19,6 +19,8 @@ public interface UserDao extends BaseMapper<User> {
 
     boolean unlockSelfUserByLocationCode(@Param("locationCode") String locationCode);
 
-    boolean unlockUserBySchoolCode(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
+    boolean unlockUserBySchoolCodeAndType(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
+
+    boolean lockUserBySchoolCodeAndType(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
 
 }

@@ -26,4 +26,12 @@ public interface UserService extends IService<User> {
 
     boolean unlockUserBySchoolCode(String schoolCode, Integer type);
 
+    /**
+     * desc: 锁定普通评估账户(非园长、组长)
+     * params: [schoolCode, type]
+     * return: boolean
+     * exception:
+     **/
+    boolean lockUserBySchoolCodeAndType(String schoolCode, Integer type);
+
 }
