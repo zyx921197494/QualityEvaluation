@@ -10,9 +10,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
+import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.Const;
@@ -44,6 +46,12 @@ public class AdminController {
 
     @Autowired
     private LocationService locationService;
+
+    @Autowired
+    private ReportFileService reportFileService;
+
+    // todo 导出自评、督评、复评账号
+
 
     @PostMapping("/createAdmins")
     public ResponseUtil createAdmins() {
@@ -242,7 +250,7 @@ public class AdminController {
 
     /**
      * desc: 县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
-     *       冻结以往周期所有的督评、复评数据
+     * 冻结以往周期所有的督评、复评数据
      *       todo 校验是否督评、复评账号随周期更换
      * params: [locationCode]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
@@ -307,10 +315,9 @@ public class AdminController {
 
 
     /**
-     * @desc:
-     * params:
      * @param schoolCodeList 重启评估的类型(5--9)：如重启自评
-     * @param type 幼儿园标识编码List
+     * @param type           幼儿园标识编码List
+     * @desc: params:
      * @return: com.winkel.qualityevaluation.util.ResponseUtil
      * @exception:
      **/
@@ -332,26 +339,67 @@ public class AdminController {
         return new ResponseUtil(200, "重启评估成功");
     }
 
-    // todo 导出自评、督评、复评账号
 
-    // todo 审核省市县的复评意见书
+    /**
+     * desc: 各级管理员查看所属的督评、复评报告
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getFinishedReport")
+    public ResponseUtil getCountyReport(HttpServletRequest request) {
+        List<Authority> authorities = userService.getAuthorities(getTokenUser(request).getUsername());
+        switch (authorities.get(0).getAuthority()) {
+            case "ROLE_ADMIN_COUNTY": {
+                List<Integer> ids = taskService.getFinishTaskIdByCountyAdminId(getTokenUser(request).getId());
+                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (reportFiles.isEmpty()) {
+                    return new ResponseUtil(200, "没有待审核的督评或县复评报告");
+                }
+                return new ResponseUtil(200, "查询督评或县复评报告成功", reportFiles);
+            }
+            case "ROLE_ADMIN_CITY": {
+                List<Integer> ids = taskService.getFinishTaskIdByCityAdminId(getTokenUser(request).getId());
+                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (reportFiles.isEmpty()) {
+                    return new ResponseUtil(200, "没有待审核的督评或县复评报告");
+                }
+                return new ResponseUtil(200, "查询市复评报告成功", reportFiles);
+            }
+            case "ROLE_ADMIN_PROVINCE": {
+                List<Integer> ids = taskService.getFinishTaskIdByProvinceAdminId(getTokenUser(request).getId());
+                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (reportFiles.isEmpty()) {
+                    return new ResponseUtil(200, "没有待审核的督评或县复评报告");
+                }
+                return new ResponseUtil(200, "查询省复评报告成功", reportFiles);
+            }
+        }
+        return new ResponseUtil(200, "查询待审核报告失败");
+    }
 
-    //定义评价任务
 
-    //定义一级评价指标
-
-    //定义耳机评价指标
-
-    //定义三级评价指标及对应各选项的分数
-
-
-
-
+    /**
+     * desc: 审核各级评估意见书
+     * params: [request, isAccept] isAccept：0为拒绝、1为通过
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/auditReport")
+    public ResponseUtil auditReport(@RequestParam Integer reportFileId, @RequestParam Integer isAccept) {
+        Integer taskId = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("report_file_id", reportFileId).select("task_id")).getTaskId();
+        boolean update = taskService.update(new UpdateWrapper<EvaluateTask>()
+                .eq("evaluate_task_id", taskId)
+                .set("task_status", isAccept == 1 ? Const.TASK_REPORT_ACCEPTED : Const.TASK_REPORT_REFUSED));
+        if (update) {
+            return new ResponseUtil(200, "审核报告成功");
+        }
+        return new ResponseUtil(500, "审核报告失败");
+    }
 
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));
     }
-
 
     @Test
     public void test() {

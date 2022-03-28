@@ -83,7 +83,7 @@ public class SuperviseController {
 
 
     /**
-     * desc: 查看已填写的评估数据
+     * desc: 查看已填写的评估数据  todo 督评也可以查看自评数据，但不能修改
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:

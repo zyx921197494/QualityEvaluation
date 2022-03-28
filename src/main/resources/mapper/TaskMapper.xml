@@ -29,7 +29,7 @@
         where cycle_county_location_code = #{locationCode}
     </select>
 
-    <select id="selectTaskIdByUserId" resultType="java.lang.Integer">
+    <select id="selectTaskIdByUserIdAndType" resultType="java.lang.Integer">
         select evaluate_task_id
         from evaluatetask,
              user,
@@ -43,7 +43,7 @@
     </select>
 
     <select id="selectTaskByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateTask">
-        select evaluatetask.task_status, evaluatetask.evaluate_task_id, evaluatetask.school_code, evaluatetask.task_cycle
+        select evaluatetask.evaluate_task_id
         from evaluatetask,
              user,
              tschool,
@@ -54,6 +54,170 @@
           and evaluatetask.task_cycle = evaluatecycle.cycle_current
           and evaluatetask.task_type = #{type}
     </select>
+
+
+    <select id="selectFinishedTaskIdByCountyAdminId" resultType="java.lang.Integer">
+        select evaluatetask.evaluate_task_id
+        from evaluatetask,
+             user,
+             tschool,
+             evaluatecycle
+        where user.id = #{id}
+          and evaluatecycle.cycle_county_location_code = user.location_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and evaluatetask.school_code = tschool.school_code
+          and evaluatetask.task_cycle = evaluatecycle.cycle_current
+          and evaluatetask.task_type in (2, 3)
+          and evaluatetask.task_status = 4
+    </select>
+
+
+    <select id="selectFinishedTaskIdByCityAdminId" resultType="java.lang.Integer">
+        select evaluatetask.evaluate_task_id
+        from evaluatetask,
+             user,
+             tschool,
+             evaluatecycle
+        where user.id = #{id}
+          and CONCAT(LEFT(tschool.school_location_code, 4), '00000000') = user.location_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and evaluatetask.school_code = tschool.school_code
+          and evaluatetask.task_cycle = evaluatecycle.cycle_current
+          and evaluatetask.task_type = 4
+          and evaluatetask.task_status = 4
+    </select>
+
+    <select id="selectFinishedTaskIdByProvinceAdminId" resultType="java.lang.Integer">
+        select evaluatetask.evaluate_task_id
+        from evaluatetask,
+             user,
+             tschool,
+             evaluatecycle
+        where user.id = #{id}
+          and CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = user.location_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
+          and evaluatetask.school_code = tschool.school_code
+          and evaluatetask.task_cycle = evaluatecycle.cycle_current
+          and evaluatetask.task_type = 5
+          and evaluatetask.task_status = 4
+    </select>
+
+    <!--    <select id="selectTaskIdByAdminId" resultType="java.lang.Integer">-->
+    <!--        select evaluatetask.evaluate_task_id-->
+    <!--        from evaluatetask,-->
+    <!--        user,-->
+    <!--        tschool,-->
+    <!--        evaluatecycle,-->
+    <!--        user_authority-->
+    <!--        where user.id = #{id}-->
+    <!--        and user_authority.user_id = user.id-->
+    <!--        and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code-->
+    <!--        and evaluatetask.task_cycle = evaluatecycle.cycle_current-->
+    <!--        and evaluatetask.school_code = tschool.school_code-->
+    <!--        and evaluatetask.task_status = 4-->
+    <!--        <choose>-->
+    <!--            <when test="user_authority.authority_id == 1">-->
+    <!--                and evaluatecycle.cycle_county_location_code = user.location_code-->
+    <!--                and evaluatetask.task_type in (2, 3)-->
+    <!--            </when>-->
+    <!--            <when test="user_authority.authority_id == 2">-->
+    <!--                and CONCAT(LEFT(tschool.school_location_code, 4), '00000000') = user.location_code-->
+    <!--                and evaluatetask.task_type = 4-->
+    <!--            </when>-->
+    <!--            <when test="user_authority.authority_id == 3">-->
+    <!--                and CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = user.location_code-->
+    <!--                and evaluatetask.task_type = 5-->
+    <!--            </when>-->
+    <!--            <otherwise>-->
+
+    <!--            </otherwise>-->
+    <!--        </choose>-->
+    <!--    </select>-->
+
+
+    <select id="selectTaskByCountycodeAndTasktypeAndStatus" resultMap="BaseResultMap">
+        select distinct evaluatetask.evaluate_task_id,
+                        evaluatetask.school_code,
+                        evaluatetask.evaluate_task_end_time,
+                        evaluatetask.task_cycle,
+                        evaluatetask.task_status,
+                        evaluatetask.task_type
+        from user,
+             evaluatetask,
+             tschool
+        where evaluatetask.task_status = #{status}
+          and evaluatetask.task_type = #{tasktype}
+          and tschool.school_location_code = #{countycode}
+    </select>
+
+    <select id="selectTaskByCitycodeAndTasktypeAndStatus" resultMap="BaseResultMap">
+        select distinct evaluatetask.evaluate_task_id,
+                        evaluatetask.school_code,
+                        evaluatetask.evaluate_task_end_time,
+                        evaluatetask.task_cycle,
+                        evaluatetask.task_status,
+                        evaluatetask.task_type
+        from user,
+             evaluatetask,
+             tschool
+        where evaluatetask.task_status = #{status}
+          and evaluatetask.task_type = #{tasktype}
+          and CONCAT(LEFT(tschool.school_location_code, 4), '00000000') = #{citycode}
+    </select>
+
+    <select id="selectTaskByProvincecodeAndTasktypeAndStatus" resultMap="BaseResultMap">
+        select distinct evaluatetask.evaluate_task_id,
+                        evaluatetask.school_code,
+                        evaluatetask.evaluate_task_end_time,
+                        evaluatetask.task_cycle,
+                        evaluatetask.task_status,
+                        evaluatetask.task_type
+        from user,
+             evaluatetask,
+             tschool
+        where evaluatetask.task_status = #{status}
+          and evaluatetask.task_type = #{tasktype}
+          and CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = #{citycode}
+    </select>
+
+    <select id="selectCountyTask" resultMap="BaseResultMap">
+        select distinct evaluatetask.evaluate_task_id,
+                        evaluatetask.school_code,
+                        evaluatetask.evaluate_task_end_time,
+                        evaluatetask.task_cycle,
+                        evaluatetask.task_status,
+                        evaluatetask.task_type
+        from evaluatetask,
+             tschool
+        where CONCAT(LEFT(tschool.school_location_code, 6), '000000') = #{locationCode}
+          and tschool.school_code = evaluatetask.school_code
+    </select>
+
+<!--    <select id="selectCityTask" resultMap="BaseResultMap">-->
+<!--        select distinct evaluatetask.evaluate_task_id,-->
+<!--                        evaluatetask.school_code,-->
+<!--                        evaluatetask.evaluate_task_end_time,-->
+<!--                        evaluatetask.task_cycle,-->
+<!--                        evaluatetask.task_status,-->
+<!--                        evaluatetask.task_type-->
+<!--        from evaluatetask,-->
+<!--             tschool-->
+<!--        where CONCAT(LEFT(tschool.school_location_code, 4), '00000000') = #{locationCode}-->
+<!--          and tschool.school_code = evaluatetask.school_code-->
+<!--    </select>-->
+
+<!--    <select id="selectProvinceTask" resultMap="BaseResultMap">-->
+<!--        select distinct evaluatetask.evaluate_task_id,-->
+<!--                        evaluatetask.school_code,-->
+<!--                        evaluatetask.evaluate_task_end_time,-->
+<!--                        evaluatetask.task_cycle,-->
+<!--                        evaluatetask.task_status,-->
+<!--                        evaluatetask.task_type-->
+<!--        from evaluatetask,-->
+<!--             tschool-->
+<!--        where CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = #{locationCode}-->
+<!--          and tschool.school_code = evaluatetask.school_code-->
+<!--    </select>-->
 
 
 </mapper>

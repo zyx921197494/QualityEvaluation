@@ -33,15 +33,15 @@ public class MyAccessDecisionVoter implements AccessDecisionVoter<Object> {
         System.out.println("需要权限" + attributes);
 
         //需要的权限
-        for ( ConfigAttribute attribute : attributes ) {
+        for (ConfigAttribute attribute : attributes) {
             if (attribute == null) {
                 continue;
             }
             String[] split = (String.valueOf(attribute)).split("'");
             attribute = new SecurityConfig(split[1]);
             //现有的权限
-            for ( GrantedAuthority authority : authorities ) {
-                if ((authority).getAuthority().equals(attribute.getAttribute())) {
+            for (GrantedAuthority authority : authorities) {
+                if (authority.getAuthority().equals(attribute.getAttribute())) {
                     System.out.println("投票通过");
                     return ACCESS_GRANTED;
                 }

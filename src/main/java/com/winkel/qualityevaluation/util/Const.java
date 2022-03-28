@@ -28,9 +28,9 @@ public class Const {
     public final static Integer LOCKED = 1;
 
     // 角色分类
-    public final static Integer ROLE_ADMIN_PROVINCE = 1;
+    public final static Integer ROLE_ADMIN_COUNTY = 1;
     public final static Integer ROLE_ADMIN_CITY = 2;
-    public final static Integer ROLE_ADMIN_COUNTY = 3;
+    public final static Integer ROLE_ADMIN_PROVINCE = 3;
     public final static Integer ROLE_ADMIN_EXPERT = 4;
     public final static Integer ROLE_EVALUATE_SELF = 5;
     public final static Integer ROLE_EVALUATE_SUPERVISOR = 6;
