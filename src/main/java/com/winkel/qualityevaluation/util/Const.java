@@ -43,6 +43,13 @@ public class Const {
     public final static Integer ROLE_EVALUATE_LEADER_CITY = 13;
     public final static Integer ROLE_EVALUATE_LEADER_PROVINCE = 14;
 
+    // 一级指标类型
+    public final static Integer INDEX1_A1 = 1;
+    public final static Integer INDEX1_A2 = 2;
+    public final static Integer INDEX1_A3 = 3;
+    public final static Integer INDEX1_A4 = 4;
+    public final static Integer INDEX1_A5 = 5;
+
     public final static String TOKEN_HEADER = "Authorization";
     public final static String STARTS_WITH = "Bearer ";
 

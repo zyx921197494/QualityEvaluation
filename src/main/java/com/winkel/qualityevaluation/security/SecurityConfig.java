@@ -61,6 +61,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .logout().logoutSuccessHandler(new MyLogoutSuccessHandler())
                 .and().authorizeRequests()
                 .antMatchers("/auth/login").permitAll()
+                .antMatchers("/common/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .antMatchers("/admin/**").hasAnyRole("ADMIN_COUNTY","ADMIN_CITY","ADMIN_PROVINCE","ADMIN_EXPERT")
                 .antMatchers("/evaluate/self/**").hasAnyRole("EVALUATE_SELF","EVALUATE_LEADER_SELF")

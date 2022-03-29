@@ -42,18 +42,18 @@
           and evaluatetask.task_type = #{type}
     </select>
 
-    <select id="selectTaskByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateTask">
-        select evaluatetask.evaluate_task_id
-        from evaluatetask,
-             user,
-             tschool,
-             evaluatecycle
-        where user.id = #{id}
-          and user.school_code = evaluatetask.school_code = tschool.school_code
-          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
-          and evaluatetask.task_cycle = evaluatecycle.cycle_current
-          and evaluatetask.task_type = #{type}
-    </select>
+<!--    <select id="selectTaskByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateTask">-->
+<!--        select evaluatetask.evaluate_task_id-->
+<!--        from evaluatetask,-->
+<!--             user,-->
+<!--             tschool,-->
+<!--             evaluatecycle-->
+<!--        where user.id = #{id}-->
+<!--          and user.school_code = evaluatetask.school_code = tschool.school_code-->
+<!--          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code-->
+<!--          and evaluatetask.task_cycle = evaluatecycle.cycle_current-->
+<!--          and evaluatetask.task_type = #{type}-->
+<!--    </select>-->
 
 
     <select id="selectFinishedTaskIdByCountyAdminId" resultType="java.lang.Integer">
@@ -144,10 +144,13 @@
                         evaluatetask.task_type
         from user,
              evaluatetask,
-             tschool
+             tschool,
+             evaluatecycle as cycle
         where evaluatetask.task_status = #{status}
           and evaluatetask.task_type = #{tasktype}
-          and tschool.school_location_code = #{countycode}
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = #{countycode}
+          and evaluatetask.task_cycle = cycle.cycle_current
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = cycle.cycle_county_location_code
     </select>
 
     <select id="selectTaskByCitycodeAndTasktypeAndStatus" resultMap="BaseResultMap">
@@ -159,10 +162,13 @@
                         evaluatetask.task_type
         from user,
              evaluatetask,
-             tschool
+             tschool,
+          evaluatecycle as cycle
         where evaluatetask.task_status = #{status}
           and evaluatetask.task_type = #{tasktype}
           and CONCAT(LEFT(tschool.school_location_code, 4), '00000000') = #{citycode}
+          and evaluatetask.task_cycle = cycle.cycle_current
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = cycle.cycle_county_location_code
     </select>
 
     <select id="selectTaskByProvincecodeAndTasktypeAndStatus" resultMap="BaseResultMap">
@@ -174,10 +180,13 @@
                         evaluatetask.task_type
         from user,
              evaluatetask,
-             tschool
+             tschool,
+          evaluatecycle as cycle
         where evaluatetask.task_status = #{status}
           and evaluatetask.task_type = #{tasktype}
-          and CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = #{citycode}
+          and CONCAT(LEFT(tschool.school_location_code, 2), '0000000000') = #{provincecode}
+          and evaluatetask.task_cycle = cycle.cycle_current
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = cycle.cycle_county_location_code
     </select>
 
     <select id="selectCountyTask" resultMap="BaseResultMap">
@@ -188,9 +197,12 @@
                         evaluatetask.task_status,
                         evaluatetask.task_type
         from evaluatetask,
-             tschool
+             tschool,
+             evaluatecycle as cycle
         where CONCAT(LEFT(tschool.school_location_code, 6), '000000') = #{locationCode}
           and tschool.school_code = evaluatetask.school_code
+          and CONCAT(LEFT(tschool.school_location_code, 6), '000000') =  cycle.cycle_county_location_code
+          and evaluatetask.task_cycle =  cycle.cycle_current
     </select>
 
 <!--    <select id="selectCityTask" resultMap="BaseResultMap">-->

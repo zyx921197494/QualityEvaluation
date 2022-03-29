@@ -10,24 +10,26 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.User;
-import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.LocationService;
+import com.winkel.qualityevaluation.service.api.SubmitService;
 import com.winkel.qualityevaluation.service.api.TaskService;
 import com.winkel.qualityevaluation.service.api.UserService;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.JWTUtil;
 import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.vo.CountDTO;
+import com.winkel.qualityevaluation.vo.ScoreDTO;
+import com.winkel.qualityevaluation.vo.ScoreVo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
+import java.text.DecimalFormat;
 import java.util.*;
 
 @Slf4j
@@ -43,6 +45,9 @@ public class AnalysisController {
 
     @Autowired
     private LocationService locationService;
+
+    @Autowired
+    private SubmitService submitService;
 
     /**
      * desc: 年度完成情况：获取下属区域中每年完成自评和督评的幼儿园数量
@@ -75,7 +80,7 @@ public class AnalysisController {
     }
 
     /**
-     * desc: 市级、升级管理员调用，获取下属所有县的自评、督评完成情况
+     * desc: 市级、省级管理员调用，获取下属所有县的自评、督评完成情况
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
@@ -203,13 +208,12 @@ public class AnalysisController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN_COUNTY')")
     @GetMapping("/evaluateCountyProcess")
-    public ResponseUtil evaluateCountyProcess(HttpServletRequest request) {
-        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
+    public ResponseUtil evaluateCountyProcess(HttpServletRequest request, @RequestParam String countyCde) {
+//        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         int self1 = 0, self2 = 0, self3 = 0, self4 = 0;
         int sup1 = 0, sup2 = 0, sup3 = 0, sup4 = 0, sup5 = 0, sup6 = 0;
-        List<EvaluateTask> tasks = taskService.getCountyTask(locationCode);
+        List<EvaluateTask> tasks = taskService.getCountyTask(countyCde);
         System.out.println("tasks = " + tasks);
         for (EvaluateTask task : tasks) {
             if (Objects.equals(task.getType(), Const.TASK_TYPE_SELF)) {
@@ -254,6 +258,119 @@ public class AnalysisController {
         return new ResponseUtil(200, "查询评估进度成功", resultMap);
     }
 
+    /**
+     * desc: 查看某县辖区内学校自评 5项一级指标的平均值，以及总分均值 todo 加入督评type
+     * params: [request, countyCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getCountyScore")
+    public ResponseUtil getCountyScore(HttpServletRequest request, @RequestParam String countyCode) {
+        HashMap<String, String> resultMap = new HashMap<>();
+        Double count = submitService.getCountByCountycode(countyCode);
+        String[] a = new String[5];
+        if (count == 0) {
+            return new ResponseUtil(200, "辖区内没有评估记录");
+        }
+        DecimalFormat df = new DecimalFormat("#0.00");  // 保留2位小数
+        a[0] = df.format(submitService.getSumByIndex1IdAndCountycode(Const.INDEX1_A1, countyCode) / count);
+        a[1] = df.format(submitService.getSumByIndex1IdAndCountycode(Const.INDEX1_A2, countyCode) / count);
+        a[2] = df.format(submitService.getSumByIndex1IdAndCountycode(Const.INDEX1_A3, countyCode) / count);
+        a[3] = df.format(submitService.getSumByIndex1IdAndCountycode(Const.INDEX1_A4, countyCode) / count);
+        a[4] = df.format(submitService.getSumByIndex1IdAndCountycode(Const.INDEX1_A5, countyCode) / count);
+        double sum = 0;
+        for (int i = 0; i < 5; i++) {
+            resultMap.put("A" + (i + 1), a[i]);
+            sum += Double.parseDouble(a[i]);
+        }
+        resultMap.put("总分均值", df.format(sum / count));
+
+        return new ResponseUtil(200, "查询一级指标得分成功", resultMap);
+    }
+
+
+    /**
+     * desc: 查看某区县内不同督评完成情况下幼儿园5项一级指标得分及总分
+     * params: [request, taskStatus, countyCode] taskStatus：督评完成状态(只能选择3--6) countyCode：若为市级/升级管理员，需要具体选择到县
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getSchoolScore")
+    public ResponseUtil getSchoolScore(HttpServletRequest request, @RequestParam Integer taskStatus, String countyCode) {
+        int role = getAdminRole(request);
+        String locationCode;
+        if (role != 1) {  // 省市级管理员
+            if (StringUtils.isBlank(countyCode)) {
+                return new ResponseUtil(500, "省市管理员要选择到区县");
+            }
+            locationCode = countyCode;
+        } else {  // 县级管理员
+            locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
+        }
+        HashMap<String, Map<String, Object>> resultMap = new HashMap<>();
+        List<ScoreVo> indexScore = submitService.getIndex1ScoreByCountycode(locationCode, taskStatus);
+        List<ScoreVo> totalScore = submitService.getTotalScoreByCountycode(locationCode, taskStatus);
+        int count = 1;
+        for (ScoreVo scoreVo : totalScore) {  // 总分从高到低排列，先循环总分
+            if (!resultMap.containsKey(scoreVo.getSchoolCode())) {  // 遍历到新学校创建key为学校标识码的map
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("No", count++);
+                map.put("schoolName", scoreVo.getSchoolName());
+                resultMap.put(scoreVo.getSchoolCode(), map);
+            }
+            resultMap.get(scoreVo.getSchoolCode()).put("total", scoreVo.getScore());
+        }
+        for (ScoreVo scoreVo : indexScore) {
+            resultMap.get(scoreVo.getSchoolCode()).put(scoreVo.getName(), scoreVo.getScore());
+        }
+        return new ResponseUtil(200, "查询评估进度成功", resultMap);
+    }
+
+
+    /**
+     * desc: 查看省市县范围内城市园和农村园总分平均值和各一级指标平均值
+     * <p>
+     * params: [scoreDTO]
+     * String locationCode：地址码，必须为省市县
+     * Integer locationType：地址码为县则type为1，市则type为2，省则type为3
+     * Integer taskType：默认查看督评任务，type=2
+     * Integer taskStatus：默认查看完成的督评任务，status=6
+     * <p>
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/getScoreIsCity")
+    public ResponseUtil getScoreIsCity(@RequestBody ScoreDTO scoreDTO) {//String locationCode, Integer locationType, Integer taskType, Integer taskStatus
+        HashMap<String, Object> resultMap = new HashMap<>(2);
+        List<ScoreVo> scoreVos = submitService.getScoreByIsCity(scoreDTO);
+        double count = submitService.getCountByLocationCodeAndType(new CountDTO().setLocationCode(scoreDTO.getLocationCode()).setLocationType(scoreDTO.getLocationType()));
+        DecimalFormat df = new DecimalFormat("#0.00");
+        for (ScoreVo scoreVo : scoreVos) {
+            if (scoreVo.getLocationTypeCode().startsWith("1")) {
+                resultMap.put("cityTotal", df.format(scoreVo.getScore() / count));
+            } else {
+                resultMap.put("countrysideTotal", df.format(scoreVo.getScore() / count));
+            }
+        }
+        HashMap<String, String> city = new HashMap<>();
+        HashMap<String, String> countryside = new HashMap<>();
+        List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
+        for (ScoreVo index : index1s) {
+            System.out.println("index = " + index);
+            if (index.getLocationTypeCode().startsWith("1")) {
+                city.put(index.getName(), df.format(index.getScore() / count));
+            } else {
+                countryside.put(index.getName(), df.format(index.getScore() / count));
+            }
+        }
+        System.out.println("city = " + city);
+        System.out.println("countryside = " + countryside);
+        resultMap.put("cityIndex", city);
+        resultMap.put("countrysideIndex", countryside);
+
+        return new ResponseUtil(200, "查询城市/农村园评估得分成功", resultMap);
+    }
+
 
     private Integer getAdminRole(HttpServletRequest request) {
         List<Authority> authorities = userService.getAuthorities(getTokenUser(request).getUsername());
@@ -274,5 +391,10 @@ public class AnalysisController {
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));
     }
+
+    @Test
+    public void test() {
+    }
+
 
 }

@@ -52,6 +52,18 @@ public class AdminController {
 
     // todo 导出自评、督评、复评账号
 
+    /**
+     * desc: 县级管理员获取当前周期
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @RequestMapping("/getCurrentCycle")
+    public ResponseUtil getCurrentCycle(HttpServletRequest request) {
+        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
+        return new ResponseUtil(200, "查询当前周期", taskService.getCurrentCycle(locationCode));
+    }
+
 
     @PostMapping("/createAdmins")
     public ResponseUtil createAdmins() {

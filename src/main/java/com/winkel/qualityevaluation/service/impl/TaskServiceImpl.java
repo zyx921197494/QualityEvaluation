@@ -30,10 +30,10 @@ public class TaskServiceImpl extends ServiceImpl<TaskDao, EvaluateTask> implemen
         return taskDao.selectTaskIdByUserIdAndType(userId, taskType);
     }
 
-    @Override
-    public EvaluateTask getTaskByUserId(String userId, Integer taskType) {
-        return taskDao.selectTaskByUserId(userId, taskType);
-    }
+//    @Override
+//    public EvaluateTask getTaskByUserId(String userId, Integer taskType) {
+//        return taskDao.selectTaskByUserId(userId, taskType);
+//    }
 
     @Override
     public List<Integer> getFinishTaskIdByCountyAdminId(String userId) {
