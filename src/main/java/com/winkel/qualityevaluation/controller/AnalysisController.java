@@ -335,40 +335,122 @@ public class AnalysisController {
      * Integer locationType：地址码为县则type为1，市则type为2，省则type为3
      * Integer taskType：默认查看督评任务，type=2
      * Integer taskStatus：默认查看完成的督评任务，status=6
+     * <p> 以下属性选一个传 String “1”
+     * String isCity：根据这个属性查则传1
+     * String isPublic：根据这个属性查则传1
+     * String isGb：根据这个属性查则传1
+     * String isRegister：根据这个属性查则传1
      * <p>
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @PostMapping("/getScoreIsCity")
+    @PostMapping("/getScoreBySort")
     public ResponseUtil getScoreIsCity(@RequestBody ScoreDTO scoreDTO) {//String locationCode, Integer locationType, Integer taskType, Integer taskStatus
         HashMap<String, Object> resultMap = new HashMap<>(2);
         List<ScoreVo> scoreVos = submitService.getScoreByIsCity(scoreDTO);
         double count = submitService.getCountByLocationCodeAndType(new CountDTO().setLocationCode(scoreDTO.getLocationCode()).setLocationType(scoreDTO.getLocationType()));
         DecimalFormat df = new DecimalFormat("#0.00");
-        for (ScoreVo scoreVo : scoreVos) {
-            if (scoreVo.getLocationTypeCode().startsWith("1")) {
-                resultMap.put("cityTotal", df.format(scoreVo.getScore() / count));
-            } else {
-                resultMap.put("countrysideTotal", df.format(scoreVo.getScore() / count));
+        String type = null;
+        if (StringUtils.isNotBlank(scoreDTO.getIsCity())) {  // 按是否是城市园查询
+            type = "城市/农村园";
+            for (ScoreVo scoreVo : scoreVos) {
+                if (scoreVo.getLocationTypeCode().startsWith("1")) {
+                    resultMap.put("cityTotal", df.format(scoreVo.getScore() / count));
+                } else {
+                    resultMap.put("countrysideTotal", df.format(scoreVo.getScore() / count));
+                }
             }
-        }
-        HashMap<String, String> city = new HashMap<>();
-        HashMap<String, String> countryside = new HashMap<>();
-        List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
-        for (ScoreVo index : index1s) {
-            System.out.println("index = " + index);
-            if (index.getLocationTypeCode().startsWith("1")) {
-                city.put(index.getName(), df.format(index.getScore() / count));
-            } else {
-                countryside.put(index.getName(), df.format(index.getScore() / count));
+            HashMap<String, String> city = new HashMap<>();
+            HashMap<String, String> countryside = new HashMap<>();
+            List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
+            for (ScoreVo index : index1s) {
+                System.out.println("index = " + index);
+                if (index.getLocationTypeCode().startsWith("1")) {
+                    city.put(index.getName(), df.format(index.getScore() / count));
+                } else {
+                    countryside.put(index.getName(), df.format(index.getScore() / count));
+                }
             }
+            System.out.println("city = " + city);
+            System.out.println("countryside = " + countryside);
+            resultMap.put("cityIndex", city);
+            resultMap.put("countrysideIndex", countryside);
+        } else if (StringUtils.isNotBlank(scoreDTO.getIsPublic())) {  // 按是否是公办园查询
+            type = "公办/民办园";
+            for (ScoreVo scoreVo : scoreVos) {
+                if (scoreVo.getHost().startsWith("9")) {  // 举办者代码以9开头则为民办学校
+                    resultMap.put("notPublicTotal", df.format(scoreVo.getScore() / count));
+                } else {
+                    resultMap.put("publicTotal", df.format(scoreVo.getScore() / count));
+                }
+            }
+            HashMap<String, String> publicSchool = new HashMap<>();
+            HashMap<String, String> notPublicSchool = new HashMap<>();
+            List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
+            for (ScoreVo index : index1s) {
+                System.out.println("index = " + index);
+                if (index.getHost().startsWith("9")) {  // 举办者代码以9开头则为民办学校
+                    notPublicSchool.put(index.getName(), df.format(index.getScore() / count));
+                } else {
+                    publicSchool.put(index.getName(), df.format(index.getScore() / count));
+                }
+            }
+            System.out.println("public = " + publicSchool);
+            System.out.println("notPublic = " + notPublicSchool);
+            resultMap.put("public", publicSchool);
+            resultMap.put("notPublic", notPublicSchool);
+        } else if (StringUtils.isNotBlank(scoreDTO.getIsGb())) {  // 按是否是普惠园查询
+            type = "普惠/非普惠园";
+            for (ScoreVo scoreVo : scoreVos) {
+                if (scoreVo.getIsGb() == 1) {  // 是普惠幼儿园
+                    resultMap.put("GBTotal", df.format(scoreVo.getScore() / count));
+                } else {
+                    resultMap.put("notGBTotal", df.format(scoreVo.getScore() / count));
+                }
+            }
+            HashMap<String, String> GBSchool = new HashMap<>();
+            HashMap<String, String> notGBSchool = new HashMap<>();
+            List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
+            for (ScoreVo index : index1s) {
+                System.out.println("index = " + index);
+                if (index.getIsGb() == 1) {  // 是普惠幼儿园
+                    GBSchool.put(index.getName(), df.format(index.getScore() / count));
+                } else {
+                    notGBSchool.put(index.getName(), df.format(index.getScore() / count));
+                }
+            }
+            System.out.println("GBSchool = " + GBSchool);
+            System.out.println("notGBSchool = " + notGBSchool);
+            resultMap.put("GBSchool", GBSchool);
+            resultMap.put("notGBSchool", notGBSchool);
+        } else if (StringUtils.isNotBlank(scoreDTO.getIsRegister())) {  // 按是否是在册园查询
+            type = "在册/未在册园";
+            for (ScoreVo scoreVo : scoreVos) {
+                if (scoreVo.getIsRegister() == 1) {  // 是普惠幼儿园
+                    resultMap.put("registerTotal", df.format(scoreVo.getScore() / count));
+                } else {
+                    resultMap.put("notRegisterGBTotal", df.format(scoreVo.getScore() / count));
+                }
+            }
+            HashMap<String, String> register = new HashMap<>();
+            HashMap<String, String> notRegister = new HashMap<>();
+            List<ScoreVo> index1s = submitService.getIndex1ByIsCity(scoreDTO);
+            for (ScoreVo index : index1s) {
+                System.out.println("index = " + index);
+                if (index.getIsRegister() == 1) {  // 是普惠幼儿园
+                    register.put(index.getName(), df.format(index.getScore() / count));
+                } else {
+                    notRegister.put(index.getName(), df.format(index.getScore() / count));
+                }
+            }
+            System.out.println("register = " + register);
+            System.out.println("notRegister = " + notRegister);
+            resultMap.put("register", register);
+            resultMap.put("notRegister", notRegister);
         }
-        System.out.println("city = " + city);
-        System.out.println("countryside = " + countryside);
-        resultMap.put("cityIndex", city);
-        resultMap.put("countrysideIndex", countryside);
 
-        return new ResponseUtil(200, "查询城市/农村园评估得分成功", resultMap);
+
+        return new ResponseUtil(200, "查询" + type + "评估得分成功", resultMap);
     }
 
 

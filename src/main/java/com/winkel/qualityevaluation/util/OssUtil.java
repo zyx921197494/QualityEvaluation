@@ -11,6 +11,7 @@ import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.*;
 import com.winkel.qualityevaluation.config.oss.OSSConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 @Service
 public class OssUtil {
 
@@ -213,6 +215,18 @@ public class OssUtil {
             return false;
         }
         return true;
+    }
+
+    public UploadResult upload(MultipartFile file) {
+        UploadResult result;
+        if (file.getSize() < 1000000L) {
+            result = uploadWithSignature(file, OssUtil.EVIDENCE_SUFFIX);
+            log.info("签名上传证据，当前文件大小 {} MB", file.getSize() >> 20);
+        } else {
+            result = uploadWithMultipart(file, OssUtil.EVIDENCE_SUFFIX);
+            log.info("分片上传证据，当前文件大小 {} MB", file.getSize() >> 20);
+        }
+        return result;
     }
 
 

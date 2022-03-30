@@ -32,11 +32,32 @@ public interface SubmitDao extends BaseMapper<EvaluateSubmit> {
 
     List<ScoreVo> selectTotalScoreByCountycode(@Param("countyCode") String countycode, @Param("taskStatus") Integer taskStatus);
 
-    //城市幼儿园和农村幼儿园的总分均值和各一级指标均值
+    //以下方法均为城市幼儿园和农村幼儿园的总分均值和各一级指标均值
 
+    Double selectCountByLocationCodeAndType(@Param("countDTO")CountDTO countDTO);
+
+    //是否城市
     List<ScoreVo> selectScoreByIsCity(@Param("scoreDTO") ScoreDTO scoreDTO);
 
     List<ScoreVo> selectIndex1ByIsCity(@Param("scoreDTO") ScoreDTO scoreDTO);
 
-    Double selectCountByLocationCodeAndType(@Param("countDTO")CountDTO countDTO);
+//    //是否公办
+//    List<ScoreVo> selectScoreByIsPublic(@Param("scoreDTO") ScoreDTO scoreDTO);
+//
+//    List<ScoreVo> selectIndex1ByIsPublic(@Param("scoreDTO") ScoreDTO scoreDTO);
+//
+//    //是否普惠
+//    List<ScoreVo> selectScoreByIsGB(@Param("scoreDTO") ScoreDTO scoreDTO);
+//
+//    List<ScoreVo> selectIndex1ByIsGB(@Param("scoreDTO") ScoreDTO scoreDTO);
+//
+//    //是否在册
+//    List<ScoreVo> selectScoreByIsRegister(@Param("scoreDTO") ScoreDTO scoreDTO);
+//
+//    List<ScoreVo> selectIndex1ByIsRegister(@Param("scoreDTO") ScoreDTO scoreDTO);
+
+
+
+
+
 }

@@ -152,7 +152,7 @@ public class EvaluateCommonController {
     }
 
     /**
-     * desc: 发送验证码 todo 存入redis验证
+     * desc: 发送验证码
      * params: [email]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:

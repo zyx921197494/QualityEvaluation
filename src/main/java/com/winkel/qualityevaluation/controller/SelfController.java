@@ -57,6 +57,9 @@ public class SelfController {
     @Autowired
     private OssUtil ossUtil;
 
+    @Autowired
+    private MailUtil mailUtil;
+
     /**
      * desc: 园长启动自评
      * params: [request]
@@ -206,18 +209,27 @@ public class SelfController {
     }
 
     /**
-     * desc: 园长完成自评 todo redis校验验证码
+     * desc: 园长完成自评
      * params: [request]
      * return: boolean
      * exception:
      **/
     @GetMapping("/finishEvaluation")
-    public boolean finishEvaluation(HttpServletRequest request, @RequestParam String code) {
+    public ResponseUtil finishEvaluation(HttpServletRequest request, @RequestParam String email, @RequestParam String code) {
+        // 校验邮箱验证码
+        if (!mailUtil.validateEmailCode(email, code)) {
+            return new ResponseUtil(500, "验证码错误");
+        }
         User user = getTokenUser(request);
         User dbUser = userService.getOne(new QueryWrapper<User>().eq("id", user.getId()).select("school_code", "cycle"));
         Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
-        return taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_DATA_SUBMITTED)) &&
+
+        boolean success = taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_DATA_SUBMITTED)) &&
                 userService.lockUserBySchoolCodeAndType(dbUser.getSchoolCode(), Const.ROLE_EVALUATE_SELF);
+        if (success) {
+            return new ResponseUtil(200, "提交督评任务成功");
+        }
+        return new ResponseUtil(500, "提交督评任务失败");
     }
 
 

@@ -11,8 +11,10 @@ import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.UserService;
+import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.RandomUtil;
 import com.winkel.qualityevaluation.vo.UserAuthority;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
 
@@ -47,14 +50,14 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
 
     @Override
     public boolean createAdmins() {
-        QueryWrapper<Location> queryWrapper = new QueryWrapper<Location>().select("code", "type").in("type", 1, 2, 3);
+        QueryWrapper<Location> queryWrapper = new QueryWrapper<Location>().select("code", "type").in("type", 1, 2, 3);  // 查找所有省市县
         List<Location> locationList = locationDao.selectList(queryWrapper);
         if (!locationList.isEmpty()) {
-            System.out.println("产生管理员账号：" + locationList.size());
+            log.info("创建管理员账号 {} 个", locationList.size());
             List<User> userList = new ArrayList<>(locationList.size());
             List<UserAuthority> userAuthorities = new ArrayList<>(locationList.size());
 
-            for (Location location : locationList) {
+            for (Location location : locationList) {            // 为每个地区创建一个的管理员
                 String userId = RandomUtil.randomString(11);
                 userList.add(new User()
                         .setId(userId)
@@ -64,9 +67,18 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
                         .setLocationCode(location.getCode())
                         .setIsLocked(0)
                         .setCreateTime(LocalDateTime.now()));
-                userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(location.getType()));
-                break;
+                Integer authorityId;
+                if (location.getType() == 1) {                  // 地区类型为省
+                    authorityId = Const.ROLE_ADMIN_PROVINCE;
+                } else if (location.getType() == 2) {           // 市
+                    authorityId = Const.ROLE_ADMIN_CITY;
+                } else {                                        // 县
+                    authorityId = Const.ROLE_ADMIN_COUNTY;
+                }
+                userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(authorityId));  // 为每个地区的管理员添加对应的权限
+                break; // todo 这里只创建一个管理员测试
             }
+
             return this.saveBatch(userList) && authorityDao.insertUserAuthorityBatch(userAuthorities);
         }
         return false;
@@ -87,6 +99,7 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
                     .setIsLocked(0)
                     .setCreateTime(LocalDateTime.now()));
             userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(authorityType));
+            break;
         }
         return this.saveBatch(userList) && authorityDao.insertUserAuthorityBatch(userAuthorities);
     }

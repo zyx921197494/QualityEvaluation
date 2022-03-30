@@ -10,24 +10,20 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.winkel.qualityevaluation.entity.Authority;
-import com.winkel.qualityevaluation.entity.Location;
-import com.winkel.qualityevaluation.entity.School;
-import com.winkel.qualityevaluation.entity.User;
+import com.winkel.qualityevaluation.entity.*;
 import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
-import com.winkel.qualityevaluation.util.Const;
-import com.winkel.qualityevaluation.util.JWTUtil;
-import com.winkel.qualityevaluation.util.RandomUtil;
-import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -50,6 +46,12 @@ public class AdminController {
     @Autowired
     private ReportFileService reportFileService;
 
+    @Autowired
+    private LocationReportService locationReportService;
+
+    @Autowired
+    private OssUtil ossUtil;
+
     // todo 导出自评、督评、复评账号
 
     /**
@@ -65,6 +67,12 @@ public class AdminController {
     }
 
 
+    /**
+     * desc: 为每个省市县创建一个有对应权限的管理员
+     * params: []
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
     @PostMapping("/createAdmins")
     public ResponseUtil createAdmins() {
         if (userService.createAdmins()) {
@@ -409,14 +417,153 @@ public class AdminController {
         return new ResponseUtil(500, "审核报告失败");
     }
 
+
+    /**
+     * desc: 上传区域报告
+     * params: [request, year, file] year：本地区哪一年的报告
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/uploadLocationReport")
+    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer year, @RequestParam("file") MultipartFile file) {
+        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
+        LocationReport report = locationReportService.getOne(new QueryWrapper<LocationReport>().eq("location_code", locationCode).eq("year", year));
+        boolean reUpload = false;  // 是否是覆盖区域报告
+        String oldFilePath = null;
+        if (report != null) {
+            reUpload = true;
+            oldFilePath = report.getFilePath();  // 旧报告地址，更新后删除旧的报告文件
+        }
+        UploadResult result = ossUtil.upload(file);
+        if (!result.getStatus().equals(UploadStatus.DONE.getStatus())) {
+            return new ResponseUtil(500, "上传报告文件至OSS时失败");
+        }
+        boolean success;
+        if (reUpload) {
+            success = locationReportService.update(new UpdateWrapper<LocationReport>()
+                    .eq("year", report.getYear())
+                    .eq("location_code", locationCode)
+                    .set("file_name", file.getOriginalFilename())
+                    .set("file_path", result.getUrl())
+                    .set("upload_time", LocalDateTime.now()));
+        } else {
+            success = locationReportService.save(new LocationReport()
+                    .setYear(year)
+                    .setLocationCode(locationCode)
+                    .setLocationName(locationService.getOne(new QueryWrapper<Location>().eq("code", locationCode).select("name")).getName())
+                    .setFileName(file.getOriginalFilename())
+                    .setFilePath(result.getUrl())
+                    .setUploadTime(LocalDateTime.now()));
+        }
+        if (!success) {
+            return new ResponseUtil(500, "修改数据库时出错");
+        }
+        if (reUpload && !ossUtil.deleteFile(oldFilePath.substring(43))) {
+            return new ResponseUtil(500, "删除旧报告时出错");
+        }
+        return new ResponseUtil(200, reUpload ? "覆盖" + year + "年区域报告成功" : "上传" + year + "年区域报告成功");
+    }
+
+    /**
+     * desc: 查看本区域内各年份的区域报告
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/listLocationReport")
+    public ResponseUtil listLocationReport(HttpServletRequest request) {
+        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
+        Integer role = getAdminRole(request);
+        List<LocationReport> resultList = new ArrayList<>();
+
+        if (role.equals(Const.ROLE_ADMIN_COUNTY)) {
+            resultList = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode));
+        } else if (role.equals(Const.ROLE_ADMIN_CITY)) {
+            resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode)));  //市级报告
+            List<Location> locations = locationService.list(new QueryWrapper<Location>().eq("p_code", locationCode));
+            for (Location location : locations) {
+                List<LocationReport> reports = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", location.getCode()));
+                if (!reports.isEmpty()) {
+                    resultList.addAll(reports);
+                }
+            }
+        } else {
+            resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode))); // 省级报告
+            List<Location> cities = locationService.list(new QueryWrapper<Location>().eq("p_code", locationCode));
+            for (Location city : cities) {
+                resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", city.getCode())));  // 市级报告
+                List<Location> counties = locationService.list(new QueryWrapper<Location>().eq("p_code", city.getCode()));
+                for (Location county : counties) {
+                    List<LocationReport> reports = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", county.getCode()));
+                    if (!reports.isEmpty()) {
+                        resultList.addAll(reports);
+                    }
+                }
+            }
+        }
+
+        if (resultList.isEmpty()) {
+            return new ResponseUtil(200, "当前辖区内未上传任何区域报告");
+        }
+        return new ResponseUtil(200, "查询成功", resultList);
+    }
+
+
+    /**
+     * desc: 根据区域报告idList批量删除区域报告
+     * params: [ids] List<Integer>
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/deleteLocationReport")
+    public ResponseUtil deleteLocationReport(@RequestBody List<Integer> ids) {
+        ArrayList<String> pathList = new ArrayList<>();
+        for (Integer id : ids) {
+            LocationReport report = locationReportService.getById(id);
+            if (report == null) {
+                return new ResponseUtil(500, "找不到id对应的区域报告，请检查参数");
+            }
+            pathList.add(report.getFilePath().substring(43));
+        }
+        if (locationReportService.removeByIds(ids)) {
+            boolean delete = true;
+            for (String path : pathList) {
+                if (!ossUtil.deleteFile(path)) {
+                    delete = false;
+                }
+            }
+            if (!delete) {
+                return new ResponseUtil(200, "删除数据库成功，删除服务器文件出错，请刷新后重试");
+            }
+            return new ResponseUtil(200, "删除成功");
+        }
+        return new ResponseUtil(500, "删除失败");
+    }
+
+
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));
     }
 
+    private Integer getAdminRole(HttpServletRequest request) {
+        List<Authority> authorities = userService.getAuthorities(getTokenUser(request).getUsername());
+        switch (authorities.get(0).getAuthority()) {
+            case "ROLE_ADMIN_COUNTY": {
+                return 1;
+            }
+            case "ROLE_ADMIN_CITY": {
+                return 2;
+            }
+            case "ROLE_ADMIN_PROVINCE": {
+                return 3;
+            }
+        }
+        return 0;
+    }
+
     @Test
     public void test() {
-        System.out.println(taskService == null);
-        System.out.println(taskService.getCurrentCycle("3100000000") + 1);
+        System.out.println("https://winkel.oss-cn-beijing.aliyuncs.com/".length());
     }
 
 

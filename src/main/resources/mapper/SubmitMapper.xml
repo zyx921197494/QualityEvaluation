@@ -102,7 +102,6 @@
     </select>
 
 
-
     <select id="selectCountByCountycode" resultType="java.lang.Double">
         select count(distinct submit.evaluate_task_id)
         from evaluatesubmit as submit,
@@ -190,84 +189,6 @@
     </select>
 
     <!--按幼儿园的某一属性区分得分 -->
-
-    <select id="selectScoreByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
-        SELECT
-        school.school_location_type_code,
-        sum(score)
-        FROM
-        evaluatesubmit AS submit,
-        evaluatetask AS task,
-        evaluateindex1 AS index1,
-        evaluateindex2 AS index2,
-        evaluateindex3 AS index3,
-        tschool AS school,
-        evaluatecycle AS cycle
-        WHERE
-        task.task_type = #{scoreDTO.taskType}
-        and task.task_status = #{scoreDTO.taskStatus}
-        and task.school_code = school.school_code
-        and concat(left(school.school_location_code,6),'000000') = cycle.cycle_county_location_code
-        and task.task_cycle = cycle.cycle_current
-        and submit.evaluate_task_id = task.evaluate_task_id
-        and submit.evaluate_index3_id = index3.evaluate_index3_id
-        and index3.evaluate_index2_id = index2.evaluate_index2_id
-        and index2.evaluate_index1_id = index1.evaluate_index1_id
-        <choose>
-            <when test="scoreDTO.locationType eq 1">
-                and concat(left(school.school_location_code,6),'000000')= #{scoreDTO.locationCode}
-            </when>
-            <when test="scoreDTO.locationType eq 2">
-                and concat(left(school.school_location_code,4),'00000000')= #{scoreDTO.locationCode}
-            </when>
-            <otherwise>
-                and concat(left(school.school_location_code,2),'0000000000')= #{scoreDTO.locationCode}
-            </otherwise>
-        </choose>
-        GROUP BY
-        school.school_location_type_code
-    </select>
-
-    <select id="selectIndex1ByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
-        SELECT
-        school.school_location_type_code,
-        index1.evaluate_index1_name,
-        sum(score)
-        FROM
-        evaluatesubmit AS submit,
-        evaluatetask AS task,
-        evaluateindex1 AS index1,
-        evaluateindex2 AS index2,
-        evaluateindex3 AS index3,
-        tschool AS school,
-        evaluatecycle AS cycle
-        WHERE
-        task.task_type = #{scoreDTO.taskType}
-        and task.task_status = #{scoreDTO.taskStatus}
-        and task.school_code = school.school_code
-        and concat(left(school.school_location_code,6),'000000') = cycle.cycle_county_location_code
-        and task.task_cycle = cycle.cycle_current
-        and submit.evaluate_task_id = task.evaluate_task_id
-        and submit.evaluate_index3_id = index3.evaluate_index3_id
-        and index3.evaluate_index2_id = index2.evaluate_index2_id
-        and index2.evaluate_index1_id = index1.evaluate_index1_id
-        <choose>
-            <when test="scoreDTO.locationType eq 1">
-                and concat(left(school.school_location_code,6),'000000')= #{scoreDTO.locationCode}
-            </when>
-            <when test="scoreDTO.locationType eq 2">
-                and concat(left(school.school_location_code,4),'00000000')= #{scoreDTO.locationCode}
-            </when>
-            <otherwise>
-                and concat(left(school.school_location_code,2),'0000000000')= #{scoreDTO.locationCode}
-            </otherwise>
-        </choose>
-        GROUP BY
-        school.school_location_type_code,
-        index1.evaluate_index1_id
-    </select>
-
-
     <select id="selectCountByLocationCodeAndType" resultType="java.lang.Double">
         select count(distinct submit.evaluate_task_id)
         from evaluatesubmit as submit,
@@ -290,6 +211,139 @@
                 and concat(left(school.school_location_code,2),'0000000000')= #{countDTO.locationCode}
             </otherwise>
         </choose>
+    </select>
+
+    <!--是否城市-->
+    <select id="selectScoreByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
+        SELECT
+        school.school_location_type_code,
+        <choose>
+            <when test="scoreDTO.isCity != null">
+                school.school_location_type_code,
+            </when>
+            <when test="scoreDTO.isPublic != null">
+                school.school_host_code,
+            </when>
+            <when test="scoreDTO.isGb != null">
+                school.is_generally_beneficial,
+            </when>
+            <when test="scoreDTO.isRegister != null">
+                school.is_register,
+            </when>
+        </choose>
+        sum(score)
+        FROM
+        evaluatesubmit AS submit,
+        evaluatetask AS task,
+        evaluateindex1 AS index1,
+        evaluateindex2 AS index2,
+        evaluateindex3 AS index3,
+        tschool AS school,
+        evaluatecycle AS cycle
+        WHERE
+        task.task_type = #{scoreDTO.taskType}
+        and task.task_status = #{scoreDTO.taskStatus}
+        and task.school_code = school.school_code
+        and concat(left(school.school_location_code,6),'000000') = cycle.cycle_county_location_code
+        and task.task_cycle = cycle.cycle_current
+        and submit.evaluate_task_id = task.evaluate_task_id
+        and submit.evaluate_index3_id = index3.evaluate_index3_id
+        and index3.evaluate_index2_id = index2.evaluate_index2_id
+        and index2.evaluate_index1_id = index1.evaluate_index1_id
+        <choose>
+            <when test="scoreDTO.locationType eq 1">
+                and concat(left(school.school_location_code,6),'000000')= #{scoreDTO.locationCode}
+            </when>
+            <when test="scoreDTO.locationType eq 2">
+                and concat(left(school.school_location_code,4),'00000000')= #{scoreDTO.locationCode}
+            </when>
+            <otherwise>
+                and concat(left(school.school_location_code,2),'0000000000')= #{scoreDTO.locationCode}
+            </otherwise>
+        </choose>
+        GROUP BY
+        <trim suffixOverrides=",">
+            <if test="scoreDTO.isPublic eq 1">
+                school.school_host_code,
+            </if>
+            <if test="scoreDTO.isCity eq 1">
+                school.school_location_type_code,
+            </if>
+            <if test="scoreDTO.isGb eq 1">
+                school.is_generally_beneficial,
+            </if>
+            <if test="scoreDTO.isRegister eq 1">
+                school.is_register,
+            </if>
+        </trim>
+
+
+    </select>
+
+    <select id="selectIndex1ByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
+        SELECT
+        school.school_location_type_code,
+        index1.evaluate_index1_name,
+        <choose>
+            <when test="scoreDTO.isCity != null">
+                school.school_location_type_code,
+            </when>
+            <when test="scoreDTO.isPublic != null">
+                school.school_host_code,
+            </when>
+            <when test="scoreDTO.isGb != null">
+                school.is_generally_beneficial,
+            </when>
+            <when test="scoreDTO.isRegister != null">
+                school.is_register,
+            </when>
+        </choose>
+        sum(score)
+        FROM
+        evaluatesubmit AS submit,
+        evaluatetask AS task,
+        evaluateindex1 AS index1,
+        evaluateindex2 AS index2,
+        evaluateindex3 AS index3,
+        tschool AS school,
+        evaluatecycle AS cycle
+        WHERE
+        task.task_type = #{scoreDTO.taskType}
+        and task.task_status = #{scoreDTO.taskStatus}
+        and task.school_code = school.school_code
+        and concat(left(school.school_location_code,6),'000000') = cycle.cycle_county_location_code
+        and task.task_cycle = cycle.cycle_current
+        and submit.evaluate_task_id = task.evaluate_task_id
+        and submit.evaluate_index3_id = index3.evaluate_index3_id
+        and index3.evaluate_index2_id = index2.evaluate_index2_id
+        and index2.evaluate_index1_id = index1.evaluate_index1_id
+        <choose>
+            <when test="scoreDTO.locationType eq 1">
+                and concat(left(school.school_location_code,6),'000000')= #{scoreDTO.locationCode}
+            </when>
+            <when test="scoreDTO.locationType eq 2">
+                and concat(left(school.school_location_code,4),'00000000')= #{scoreDTO.locationCode}
+            </when>
+            <otherwise>
+                and concat(left(school.school_location_code,2),'0000000000')= #{scoreDTO.locationCode}
+            </otherwise>
+        </choose>
+        GROUP BY
+        <choose>
+            <when test="scoreDTO.isCity != null">
+                school.school_location_type_code,
+            </when>
+            <when test="scoreDTO.isPublic != null">
+                school.school_host_code,
+            </when>
+            <when test="scoreDTO.isGb != null">
+                school.is_generally_beneficial,
+            </when>
+            <when test="scoreDTO.isRegister != null">
+                school.is_register,
+            </when>
+        </choose>
+        index1.evaluate_index1_id
     </select>
 
 </mapper>

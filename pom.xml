@@ -29,6 +29,13 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!--Redis-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>2.3.12.RELEASE</version>
+        </dependency>
+
         <!--数据库-->
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
@@ -56,10 +63,10 @@
             <artifactId>druid</artifactId>
             <version>1.1.20</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>p6spy</groupId>-->
-<!--            <artifactId>p6spy</artifactId>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>p6spy</groupId>-->
+        <!--            <artifactId>p6spy</artifactId>-->
+        <!--        </dependency>-->
 
         <!--工具包-->
         <dependency>
@@ -88,16 +95,16 @@
             <artifactId>jackson-core</artifactId>
             <version>2.13.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
-<!--            <artifactId>jackson-databind</artifactId>-->
-<!--            <version>2.13.1</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
-<!--            <artifactId>jackson-annotations</artifactId>-->
-<!--            <version>2.13.1</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.fasterxml.jackson.core</groupId>-->
+        <!--            <artifactId>jackson-databind</artifactId>-->
+        <!--            <version>2.13.1</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.fasterxml.jackson.core</groupId>-->
+        <!--            <artifactId>jackson-annotations</artifactId>-->
+        <!--            <version>2.13.1</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
@@ -110,16 +117,16 @@
             <artifactId>spring-boot-starter-mail</artifactId>
             <version>2.6.5</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>javax.mail</groupId>-->
-<!--            <artifactId>mail</artifactId>-->
-<!--            <version>1.4.7</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework</groupId>-->
-<!--            <artifactId>spring-context-support</artifactId>-->
-<!--            <version>5.3.0</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>javax.mail</groupId>-->
+        <!--            <artifactId>mail</artifactId>-->
+        <!--            <version>1.4.7</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework</groupId>-->
+        <!--            <artifactId>spring-context-support</artifactId>-->
+        <!--            <version>5.3.0</version>-->
+        <!--        </dependency>-->
 
         <!--Excel-->
         <dependency>
@@ -127,11 +134,11 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.1.0</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.poi</groupId>-->
-<!--            <artifactId>poi</artifactId>-->
-<!--            <version>5.1.0</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.poi</groupId>-->
+        <!--            <artifactId>poi</artifactId>-->
+        <!--            <version>5.1.0</version>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>junit</groupId>
