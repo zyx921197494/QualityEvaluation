@@ -1,5 +1,6 @@
 package com.winkel.qualityevaluation.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -34,6 +35,7 @@ public class User implements UserDetails, Serializable {
     private Integer cycle;
 
     //权限集合
+    @TableField(exist = false)
     private List<Authority> authorities;
 
     public User(String username, String password) {

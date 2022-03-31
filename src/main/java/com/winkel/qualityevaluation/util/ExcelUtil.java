@@ -19,6 +19,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -63,7 +64,35 @@ public class ExcelUtil {
             jsonObject = new JSONObject(resultMap);
             resultMapList.add(jsonObject.toJSONString());
         }
-        System.out.println(resultMapList);
+        return JSONArray.parseArray(resultMapList.toString(), tClass);
+    }
+
+
+    public static <T> List<T> readListFromExcel(MultipartFile uploadFile, String sheetName, Class<T> tClass) throws IOException {
+        List<String> resultMapList = new ArrayList<>();
+        File file = multifile2File(uploadFile);
+        FileInputStream inputStream = new FileInputStream(file);
+        // 使用工厂模式 根据文件扩展名 创建对应的Workbook
+        Workbook workbook = WorkbookFactory.create(inputStream);
+        Sheet sheet = workbook.getSheet(sheetName);
+        int rowCount = sheet.getLastRowNum() - sheet.getFirstRowNum();
+        JSONObject jsonObject;
+        Map<String, Object> resultMap;
+        for (int i = 1; i < rowCount + 1; i++) {
+            Row row = sheet.getRow(i);
+            resultMap = new HashMap<>();
+            for (int j = 0; j < row.getLastCellNum(); j++) {
+                if (Objects.equals(row.getCell(j).getCellType(), CellType.STRING)) {
+                    resultMap.put(sheet.getRow(0).getCell(j).toString(), row.getCell(j).getStringCellValue());
+                } else if (Objects.equals(row.getCell(j).getCellType(), CellType.NUMERIC)) {
+                    resultMap.put(sheet.getRow(0).getCell(j).toString(), row.getCell(j).getNumericCellValue());
+                } else {
+                    resultMap.put(sheet.getRow(0).getCell(j).toString(), row.getCell(j));
+                }
+            }
+            jsonObject = new JSONObject(resultMap);
+            resultMapList.add(jsonObject.toJSONString());
+        }
         return JSONArray.parseArray(resultMapList.toString(), tClass);
     }
 
@@ -137,6 +166,12 @@ public class ExcelUtil {
             workbook = new XSSFWorkbook(in);
         }
         return workbook;
+    }
+
+    private static File multifile2File(MultipartFile file) throws IOException {
+        File multifile = File.createTempFile("temp", null);
+        file.transferTo(multifile);
+        return multifile;
     }
 
 

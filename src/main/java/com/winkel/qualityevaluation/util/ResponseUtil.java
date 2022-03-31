@@ -28,6 +28,10 @@ public class ResponseUtil {
        return new ResponseUtil(statusCode,message, data);
     }
 
+    public static ResponseUtil response(int statusCode, String message) {
+        return new ResponseUtil(statusCode,message, null);
+    }
+
     public ResponseUtil(int statusCode, String message) {
         this.statusCode = statusCode;
         this.message = message;

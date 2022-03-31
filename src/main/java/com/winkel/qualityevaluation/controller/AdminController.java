@@ -6,23 +6,30 @@ package com.winkel.qualityevaluation.controller;
   @Date 2022-03-14 14:43
   */
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winkel.qualityevaluation.entity.*;
 import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
+import com.winkel.qualityevaluation.vo.AccountVo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -52,8 +59,6 @@ public class AdminController {
     @Autowired
     private OssUtil ossUtil;
 
-    // todo 导出自评、督评、复评账号
-
     /**
      * desc: 县级管理员获取当前周期
      * params: [request]
@@ -76,33 +81,95 @@ public class AdminController {
     @PostMapping("/createAdmins")
     public ResponseUtil createAdmins() {
         if (userService.createAdmins()) {
-            return ResponseUtil.response(200, "创建省市县级管理员成功", null);
-        } else return ResponseUtil.response(200, "创建省市县级管理员失败", null);
+            return ResponseUtil.response(200, "创建省市县级管理员成功");
+        } else return ResponseUtil.response(200, "创建省市县级管理员失败");
     }
 
 
-    //TODO 上传Excel文件并解析为school对象
-    //TODO 创建用户后为其添加权限
+    /**
+     * desc: 生成在册幼儿园自评、督评评估账号
+     * params: [schoolList, authorityType]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @SneakyThrows
     @PostMapping("/createRegisterUsers")
-    public ResponseUtil createRegisterUsers(@RequestBody List<School> schoolList, @RequestParam("authorityType") Integer authorityType) {
-        //先查询是否存在幼儿园(以标识码为准)，存在则更新，不存在则增加幼儿园
-        if (schoolService.saveOrUpdateBatch(schoolList)) {
-            //为每个幼儿园创建用户
-            if (userService.createRegisterUsers(schoolList, authorityType)) {
-                return ResponseUtil.response(200, "创建在册园账号成功", null);
-            }
-            return ResponseUtil.response(200, "创建在册园账号失败", null);
+    public ResponseUtil createRegisterUsers(@RequestParam("file") MultipartFile file) {
+        if (!StringUtils.equals(file.getOriginalFilename(), "园所信息表.xlsx")) {
+            return ResponseUtil.response(500, "上传文件名必须为 园所信息表.xlsx");
         }
-        return ResponseUtil.response(200, "请求json：schoolList有误，创建在册园账号失败", null);
+        // 读取Excel
+        List<School> schools = ExcelUtil.readListFromExcel(file, "Sheet1", School.class);
+        if (schools == null || schools.isEmpty()) {
+            return ResponseUtil.response(500, "Excel为空，请填写后上传");
+        }
+        //先查询Excel中幼儿园是否与数据库内一致
+        for (School school : schools) {
+            School dbSchool = schoolService.getOne(new QueryWrapper<>(school));
+            if (dbSchool == null) {
+                return new ResponseUtil(500, "数据匹配失败：学校标识码 " + school.getCode() + " ，请校验后重新提交");
+            }
+        }
+        //为每个幼儿园创建用户
+        userService.createRegisterUsers(schools, Const.ROLE_EVALUATE_SELF);  // 自评
+        userService.createRegisterUsers(schools, Const.ROLE_EVALUATE_SUPERVISOR);  // 督评
+//        userService.createRegisterUsers(schools, Const.ROLE_EVALUATE_COUNTY);  // 复评
+        return ResponseUtil.response(200, "创建在册园评估账号成功");
     }
 
 
-    @PostMapping("/createNotRegisterUsers")
-    public ResponseUtil createNotRegisterUsers(String locationCode, int num) {
-        if (userService.createNotRegisterUsers(locationCode, num)) {
-            return ResponseUtil.response(200, "创建未在册园账号成功", null);
+//    /**
+//     * desc: 省市级管理员选择到县，县级管理员无需选择。创建未在册学校的各级评估账户
+//     * params: [locationCode, num]
+//     * return: com.winkel.qualityevaluation.util.ResponseUtil
+//     * exception:
+//     **/
+//    @PostMapping("/createNotRegisterUsers")
+//    public ResponseUtil createNotRegisterUsers(String countyCode, int num) {
+//        if (userService.createNotRegisterUsers(countyCode, num, Const.ROLE_EVALUATE_SELF)
+//                && userService.createNotRegisterUsers(countyCode, num, Const.ROLE_EVALUATE_SUPERVISOR)) {
+//            return ResponseUtil.response(200, "创建未在册园账号成功");
+//        }
+//        return ResponseUtil.response(500, "创建未在册园评估账号失败");
+//    }
+
+
+    /**
+     * desc: 导出自评、督评账号
+     * params: [schools, userType] schools：学校的标识码列表userType：自评(5、10)、督评(6、11)
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @SneakyThrows
+    @GetMapping("/exportUser")
+    public ResponseUtil exportUser(@RequestBody List<String> schoolCodes, Integer authorityId) {
+        for (String schoolCode : schoolCodes) {
+            String schoolName = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode)).getName();
+            List<AccountVo> accounts = userService.getAccountBySchoolCodeAndAuthorityType(schoolCode, authorityId);
+            String path = "C:\\Users\\Public\\Downloads\\";
+            File file = new File(path + schoolCode + schoolName + ".txt");
+            file.createNewFile();
+            FileWriter fw = new FileWriter(file, false);
+            PrintWriter pw = new PrintWriter(fw);
+            pw.println("用户名              密码              用户类型");
+
+            for (AccountVo account : accounts) {
+                if (account.getAuthorityId() == 5) {
+                    account.setAccountType("自评");
+                } else if (account.getAuthorityId() == 6) {
+                    account.setAccountType("督评");
+                } else if (account.getAuthorityId() == 10) {
+                    account.setAccountType("自评组长");
+                } else if (account.getAuthorityId() == 11) {
+                    account.setAccountType("督评组长");
+                }
+                pw.println(account.getUsername() + "          " + account.getPassword() + "          " + account.getAccountType());
+            }
+            fw.close();
+            pw.close();
         }
-        return ResponseUtil.response(200, "创建未在册园账号失败", null);
+
+        return new ResponseUtil(200, "导出账号成功");
     }
 
 
@@ -252,7 +319,6 @@ public class AdminController {
     @GetMapping("/deleteUser")
     public ResponseUtil deleteUser(@RequestParam String schoolCode) {
         School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
-        System.out.println("school = " + school);
         if (school == null || school.getIsLocked() == 1) {
             return new ResponseUtil(500, "幼儿园不存在或已删除");
         }
@@ -563,7 +629,12 @@ public class AdminController {
 
     @Test
     public void test() {
-        System.out.println("https://winkel.oss-cn-beijing.aliyuncs.com/".length());
+        ArrayList<User> users = new ArrayList<>();
+        User user = new User().setUsername("111");
+        users.add(user);
+        user.setUsername("222");
+        users.add(user);
+        System.out.println(users);
     }
 
 

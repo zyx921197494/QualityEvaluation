@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.winkel.qualityevaluation.dao.AuthorityDao;
 import com.winkel.qualityevaluation.dao.LocationDao;
-import com.winkel.qualityevaluation.dao.SchoolDao;
+import com.winkel.qualityevaluation.dao.TaskDao;
 import com.winkel.qualityevaluation.dao.UserDao;
 import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.Location;
@@ -13,6 +13,7 @@ import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.UserService;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.RandomUtil;
+import com.winkel.qualityevaluation.vo.AccountVo;
 import com.winkel.qualityevaluation.vo.UserAuthority;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,10 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     private LocationDao locationDao;
 
     @Resource
-    private SchoolDao schoolDao;
+    private AuthorityDao authorityDao;
 
     @Resource
-    private AuthorityDao authorityDao;
+    private TaskDao taskDao;
 
     @Override
     public int checkPassword(String username, String password) {
@@ -85,32 +86,75 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     }
 
     @Override
-    public boolean createRegisterUsers(List<School> schoolList, int authorityType) {
+    public boolean createRegisterUsers(List<School> schoolList, Integer authorityId) {
         List<User> userList = new ArrayList<>();
         List<UserAuthority> userAuthorities = new ArrayList<>();
         for (School school : schoolList) {
-            String userId = RandomUtil.randomString(11);
+            Integer cycle = taskDao.selectCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
+            Integer count = userDao.checkCreated(school.getCode(), cycle, authorityId);
+            if (count != null && count > 0) {  // 已创建过该类型的6个评估用户
+                continue;
+            }
+            String leaderId = RandomUtil.randomString(11);  // 一个园长/督评组长
             userList.add(new User()
-                    .setId(userId)
+                    .setId(leaderId)
                     .setUsername(RandomUtil.randomNums(6))
                     .setPassword(RandomUtil.randomNums(8))
-                    .setName("")
                     .setSchoolCode(school.getCode())
-                    .setIsLocked(0)
+                    .setIsLocked(Const.NOT_LOCKED)
+                    .setCycle(cycle)
                     .setCreateTime(LocalDateTime.now()));
-            userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(authorityType));
-            break;
+            userAuthorities.add(new UserAuthority().setUserId(leaderId).setAuthorityId(authorityId + 5));
+
+            for (int i = 0; i < 5; i++) {  // 5个普通评估账户
+                String userId = RandomUtil.randomString(11);
+                userList.add(new User()
+                        .setId(userId)
+                        .setUsername(RandomUtil.randomNums(6))
+                        .setPassword(RandomUtil.randomNums(8))
+                        .setSchoolCode(school.getCode())
+                        .setIsLocked(Const.NOT_LOCKED)
+                        .setCycle(cycle)
+                        .setCreateTime(LocalDateTime.now()));
+                userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(authorityId));
+            }
+
         }
+        if (userList.isEmpty()) return false;
         return this.saveBatch(userList) && authorityDao.insertUserAuthorityBatch(userAuthorities);
     }
 
     @Override
-    public boolean createNotRegisterUsers(String locationCode, int num) {
-        ArrayList<User> userList = new ArrayList<>();
+    public boolean createNotRegisterUsers(String locationCode, int num, Integer authorityId) {
+        Integer cycle = taskDao.selectCurrentCycle(locationCode);
+        List<User> userList = new ArrayList<>();
+        List<UserAuthority> userAuthorities = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            userList.add(new User(RandomUtil.randomString(11), RandomUtil.randomNums(6), RandomUtil.randomNums(8), locationCode, 0, LocalDateTime.now()));
+            String leaderId = RandomUtil.randomString(11);  // 一个园长/督评组长
+            userList.add(new User()
+                    .setId(leaderId)
+                    .setUsername(RandomUtil.randomNums(6))
+                    .setPassword(RandomUtil.randomNums(8))
+                    .setLocationCode(locationCode)
+                    .setIsLocked(Const.NOT_LOCKED)
+                    .setCycle(cycle)
+                    .setCreateTime(LocalDateTime.now()));
+            userAuthorities.add(new UserAuthority().setUserId(leaderId).setAuthorityId(authorityId + 5));
+
+            for (int j = 0; j < 5; j++) {  // 5个普通评估账户
+                String userId = RandomUtil.randomString(11);
+                userList.add(new User()
+                        .setId(userId)
+                        .setUsername(RandomUtil.randomNums(6))
+                        .setPassword(RandomUtil.randomNums(8))
+                        .setLocationCode(locationCode)
+                        .setIsLocked(Const.NOT_LOCKED)
+                        .setCycle(cycle)
+                        .setCreateTime(LocalDateTime.now()));
+                userAuthorities.add(new UserAuthority().setUserId(userId).setAuthorityId(authorityId));
+            }
         }
-        return this.saveBatch(userList);
+        return this.saveBatch(userList) && authorityDao.insertUserAuthorityBatch(userAuthorities);
     }
 
     @Override
@@ -131,5 +175,16 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     @Override
     public boolean lockUserBySchoolCodeAndType(String schoolCode, Integer type) {
         return userDao.lockUserBySchoolCodeAndType(schoolCode, type);
+    }
+
+    /**
+     * desc: 导出不同类型的用户
+     * params: [schoolCode, authorityId]
+     * return: java.util.List<com.winkel.qualityevaluation.vo.AccountVo>
+     * exception:
+     */
+    @Override
+    public List<AccountVo> getAccountBySchoolCodeAndAuthorityType(String schoolCode, Integer authorityId) {
+        return userDao.selectAccountBySchoolCodeAndAuthorityType(schoolCode, authorityId);
     }
 }

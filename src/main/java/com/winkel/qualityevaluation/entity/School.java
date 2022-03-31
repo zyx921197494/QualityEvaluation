@@ -10,6 +10,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,43 +26,47 @@ import lombok.experimental.Accessors;
 @TableName("tschool")
 public class School {
 
-    @JSONField(name = "code")
+    @JSONField(name = "标识码")
     @TableId(value = "school_code")
     private String code;  //标识码
 
-    @JSONField(name = "name")
+    @JSONField(name = "学校名称")
     @TableField("school_name")
     private String name;  //名称
 
-    @JSONField(name = "location")
+    @JSONField(name = "地址")
     @TableField("school_location")
     private String location;  //详细地址
 
-    @JSONField(name = "locationCode")
+    @JSONField(name = "地址代码")
     @TableField("school_location_code")
     private String locationCode;  //地址代码
 
-    @JSONField(name = "locationTypeCode")
+    @JSONField(name = "驻地城乡类型代码")
     @TableField("school_location_type_code")
     private String locationTypeCode;  //驻地城乡类型代码
 
-    @JSONField(name = "typeCode")
+    @JSONField(name = "办学类型代码")
     @TableField("school_type_code")
     private String typeCode;  //办学类型代码
 
-    @JSONField(name = "hostCode")
+    @JSONField(name = "举办者代码")
     @TableField("school_host_code")
     private String hostCode;  //举办者代码
 
-    @JSONField(name = "isRegister")
-    @TableField("is_register")
-    private Integer isRegister;  //是否在册
-
-    @JSONField(name = "isGenerallyBeneficial")
+    @JSONField(name = "是否普惠")
     @TableField("is_generally_beneficial")
     private Integer isGenerallyBeneficial;  //是否普惠
 
-    @JSONField(name = "isLocked")
+    @JSONField(name = "是否乡镇中心学校")
+    @TableField("is_central")
+    private Integer isCentral;
+
+    @JsonIgnore
+    @TableField("is_register")
+    private Integer isRegister;  //是否在册
+
+    @JsonIgnore
     @TableField("is_locked")
     private Integer isLocked;  // 是否锁定
 

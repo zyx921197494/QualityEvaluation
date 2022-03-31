@@ -8,6 +8,7 @@ package com.winkel.qualityevaluation.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2;
@@ -33,6 +34,9 @@ public class EvaluateCommonController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private SchoolService schoolService;
 
     @Autowired
     private Index1Service index1Service;
@@ -91,7 +95,7 @@ public class EvaluateCommonController {
 
 
     /**
-     * desc: 点击用户信息栏，更新用户
+     * desc: 点击用户信息栏，更新用户 或 园长/组长第一次登录时填写用户
      * params: [userVo]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
@@ -165,6 +169,51 @@ public class EvaluateCommonController {
         }
         return new ResponseUtil(500, "邮件发送失败，请重试");
     }
+
+
+    /**
+     * desc: 幼儿园园长第一次登录时查看幼儿园信息
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getSchoolInfo")
+    public ResponseUtil getSchoolInfo(HttpServletRequest request) {
+        String schoolCode = userService.getById(getTokenUser(request).getId()).getSchoolCode();
+        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+        if (school == null) {
+            return new ResponseUtil(200, "幼儿园信息为空");
+        }
+        return new ResponseUtil(200, "查询幼儿园信息成功", school);
+    }
+    
+    
+//    /**
+//     * desc: 未注册幼儿园首次登录时填写学校数据
+//     * params: [school]
+//     * return: com.winkel.qualityevaluation.util.ResponseUtil
+//     * exception:
+//     **/
+//    @PostMapping("/updateSchool")
+//    public ResponseUtil updateSchool(@RequestBody School school) {
+//        HashMap<String, Object> map = new HashMap<>();
+//        map.put("school_name", school.getName());
+//        map.put("school_location", school.getLocation());
+//        map.put("school_location_code", school.getLocationCode());
+//        map.put("school_location_type_code", school.getLocationTypeCode());
+//        map.put("school_type_code", school.getTypeCode());
+//        map.put("school_host_code", school.getHostCode());
+//        map.put("is_generally_beneficial", school.getIsGenerallyBeneficial());
+//        map.put("is_central", school.getIsCentral());
+//
+//        boolean success = schoolService.update(new QueryWrapper<School>()
+//                .eq("school_code", school.getCode())
+//                .allEq(map, false));
+//        if (success) {
+//            return new ResponseUtil(200, "更新学校信息成功");
+//        }
+//        return new ResponseUtil(500, "更新学校信息失败");
+//    }
 
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));

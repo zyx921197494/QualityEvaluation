@@ -16,6 +16,12 @@
         <result column="cycle" property="cycle"/>
     </resultMap>
 
+    <resultMap id="AccountMap" type="com.winkel.qualityevaluation.vo.AccountVo">
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="authority_id" property="authorityId"/>
+    </resultMap>
+
     <select id="checkPassword" resultType="int" parameterType="map">
         SELECT count(1)
         from user
@@ -30,6 +36,18 @@
              authority,
              user_authority
         WHERE user.username = #{username,jdbcType=VARCHAR}
+          AND user.id = user_authority.user_id
+          AND user_authority.authority_id = authority.id
+    </select>
+
+    <select id="checkCreated" resultType="java.lang.Integer">
+        SELECT count(user.id)
+        FROM user,
+             authority,
+             user_authority
+        WHERE user.school_code = #{schoolCode}
+          and user.cycle = #{cycle}
+          and authority.id = #{authorityId}
           AND user.id = user_authority.user_id
           AND user_authority.authority_id = authority.id
     </select>
@@ -77,5 +95,22 @@
           and CONCAT(LEFT(tschool.school_location_code, 6), '000000') = evaluatecycle.cycle_county_location_code
           and user.cycle = evaluatecycle.cycle_current
     </update>
+
+    <select id="selectAccountBySchoolCodeAndAuthorityType" resultMap="AccountMap">
+        select user.username, user.password, user_authority.authority_id
+        from user,
+             authority,
+             user_authority,
+             evaluatecycle as cycle,
+             tschool as school
+        where user.school_code = school.school_code
+          and user_authority.user_id = user.id
+          and user_authority.authority_id = authority.id
+          and authority.id in (#{authorityId}, #{authorityId} + 5)
+          and user.school_code = #{schoolCode}
+          and user.cycle = cycle.cycle_current
+          and CONCAT(LEFT(school.school_location_code, 6), '000000') = cycle.cycle_county_location_code
+    </select>
+
 
 </mapper>
