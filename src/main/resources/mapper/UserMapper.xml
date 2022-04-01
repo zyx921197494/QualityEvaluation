@@ -48,6 +48,7 @@
         WHERE user.school_code = #{schoolCode}
           and user.cycle = #{cycle}
           and authority.id = #{authorityId}
+          and user.is_locked = 0
           AND user.id = user_authority.user_id
           AND user_authority.authority_id = authority.id
     </select>
@@ -109,6 +110,7 @@
           and authority.id in (#{authorityId}, #{authorityId} + 5)
           and user.school_code = #{schoolCode}
           and user.cycle = cycle.cycle_current
+          and user.is_locked = 0
           and CONCAT(LEFT(school.school_location_code, 6), '000000') = cycle.cycle_county_location_code
     </select>
 

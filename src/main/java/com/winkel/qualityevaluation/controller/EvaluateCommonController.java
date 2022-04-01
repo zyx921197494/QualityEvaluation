@@ -15,8 +15,10 @@ import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
+import com.winkel.qualityevaluation.vo.SchoolVo;
 import com.winkel.qualityevaluation.vo.UserVo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,9 +103,9 @@ public class EvaluateCommonController {
      * exception:
      **/
     @PostMapping("/updateUserInfo")
-    public ResponseUtil updateUser(@RequestBody UserVo userVo) {
+    public ResponseUtil updateUserInfo(HttpServletRequest request,@RequestBody UserVo userVo) {
         if (userService.update(new UpdateWrapper<User>()
-                .eq("id", userVo.getId())
+                .eq("id", getTokenUser(request).getId())
                 .set("name", userVo.getName())
                 .set("email", userVo.getEmail()))) {
             return new ResponseUtil(200, "提交个人信息成功");
@@ -163,7 +165,11 @@ public class EvaluateCommonController {
      **/
 
     @GetMapping("/sendEmail")
-    public ResponseUtil sendEmail(@RequestParam("email") String email) {
+    public ResponseUtil sendEmail(HttpServletRequest request, @RequestParam("email") String email) {
+        String dbEmail = userService.getById(getTokenUser(request).getId()).getEmail();
+        if (!StringUtils.equals(email, dbEmail)) {
+            return new ResponseUtil(500, "请填写个人信息中的邮箱");
+        }
         if (mailUtil.sendEmail(email)) {
             return new ResponseUtil(200, "邮件发送成功");
         }
@@ -180,7 +186,8 @@ public class EvaluateCommonController {
     @GetMapping("/getSchoolInfo")
     public ResponseUtil getSchoolInfo(HttpServletRequest request) {
         String schoolCode = userService.getById(getTokenUser(request).getId()).getSchoolCode();
-        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+        System.out.println("schoolCode = " + schoolCode);
+        SchoolVo school = schoolService.getSchoolVoBySchoolCode(schoolCode);
         if (school == null) {
             return new ResponseUtil(200, "幼儿园信息为空");
         }

@@ -208,12 +208,13 @@ public class AnalysisController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN_COUNTY')")
     @GetMapping("/evaluateCountyProcess")
-    public ResponseUtil evaluateCountyProcess(HttpServletRequest request, @RequestParam String countyCde) {
+    public ResponseUtil evaluateCountyProcess(HttpServletRequest request, @RequestParam String countyCode) {
 //        String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         int self1 = 0, self2 = 0, self3 = 0, self4 = 0;
         int sup1 = 0, sup2 = 0, sup3 = 0, sup4 = 0, sup5 = 0, sup6 = 0;
-        List<EvaluateTask> tasks = taskService.getCountyTask(countyCde);
+        List<EvaluateTask> tasks = taskService.getCountyTask(countyCode);
         System.out.println("tasks = " + tasks);
         for (EvaluateTask task : tasks) {
             if (Objects.equals(task.getType(), Const.TASK_TYPE_SELF)) {
@@ -345,7 +346,7 @@ public class AnalysisController {
      * exception:
      **/
     @PostMapping("/getScoreBySort")
-    public ResponseUtil getScoreIsCity(@RequestBody ScoreDTO scoreDTO) {//String locationCode, Integer locationType, Integer taskType, Integer taskStatus
+    public ResponseUtil getScoreIsCity(@RequestBody ScoreDTO scoreDTO) {
         HashMap<String, Object> resultMap = new HashMap<>(2);
         List<ScoreVo> scoreVos = submitService.getScoreByIsCity(scoreDTO);
         double count = submitService.getCountByLocationCodeAndType(new CountDTO().setLocationCode(scoreDTO.getLocationCode()).setLocationType(scoreDTO.getLocationType()));

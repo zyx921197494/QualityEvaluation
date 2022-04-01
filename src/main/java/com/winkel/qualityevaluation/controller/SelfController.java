@@ -19,6 +19,7 @@ import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
 import com.winkel.qualityevaluation.vo.Index3Vo;
 import com.winkel.qualityevaluation.vo.SubmitVo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -227,9 +228,9 @@ public class SelfController {
         boolean success = taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_DATA_SUBMITTED)) &&
                 userService.lockUserBySchoolCodeAndType(dbUser.getSchoolCode(), Const.ROLE_EVALUATE_SELF);
         if (success) {
-            return new ResponseUtil(200, "提交督评任务成功");
+            return new ResponseUtil(200, "提交自评任务成功");
         }
-        return new ResponseUtil(500, "提交督评任务失败");
+        return new ResponseUtil(500, "提交自评任务失败");
     }
 
 
@@ -239,6 +240,7 @@ public class SelfController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
+    @SneakyThrows
     @GetMapping("/exportEvaluation")
     public ResponseUtil exportEvaluation(HttpServletRequest request) {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SELF);
@@ -358,7 +360,7 @@ public class SelfController {
                         .setMemo(file.getOriginalFilename());
                 if (reportFileService.save(reportFile) &&
                         taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_REPORT_SUBMITTED))) {  // 修改task为已提交报告状态
-                    return new ResponseUtil(200, "上传报告成功");
+                    return new ResponseUtil(200, "上传自评报告成功");
                 }
                 return new ResponseUtil(500, "报告记录写入数据库时出错");
             }

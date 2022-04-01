@@ -9,6 +9,10 @@ package com.winkel.qualityevaluation.service.api;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.School;
+import com.winkel.qualityevaluation.vo.SchoolVo;
 
 public interface SchoolService extends IService<School> {
+
+    SchoolVo getSchoolVoBySchoolCode(String schoolCode);
+
 }

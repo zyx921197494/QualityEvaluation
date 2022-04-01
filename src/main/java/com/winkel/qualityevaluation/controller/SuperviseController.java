@@ -18,6 +18,7 @@ import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
 import com.winkel.qualityevaluation.vo.Index3Vo;
 import com.winkel.qualityevaluation.vo.SubmitVo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -86,7 +87,7 @@ public class SuperviseController {
 
 
     /**
-     * desc: 查看已填写的评估数据  todo 督评也可以查看自评数据，但不能修改
+     * desc: 查看已填写的评估数据
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
@@ -275,6 +276,7 @@ public class SuperviseController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
+    @SneakyThrows
     @GetMapping("/exportEvaluation")
     public ResponseUtil exportEvaluation(HttpServletRequest request) {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
@@ -394,7 +396,7 @@ public class SuperviseController {
                         .setMemo(file.getOriginalFilename());
                 if (reportFileService.save(reportFile) &&
                         taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_REPORT_SUBMITTED))) {  // 修改task为已提交报告状态
-                    return new ResponseUtil(200, "上传报告成功");
+                    return new ResponseUtil(200, "上传督评报告成功");
                 }
                 return new ResponseUtil(500, "报告记录写入数据库时出错");
             }

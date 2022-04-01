@@ -8,13 +8,59 @@
         <result column="school_name" property="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="school_location" property="location" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="school_location_code" property="locationCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
-        <result column="school_location_type_code" property="locationTypeCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location_type_code" property="locationTypeCode" javaType="java.lang.String"
+                jdbcType="VARCHAR"/>
         <result column="school_type_code" property="typeCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="school_host_code" property="hostCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="is_register" property="isRegister" javaType="java.lang.Integer" jdbcType="INTEGER"/>
-        <result column="is_generally_beneficial" property="isGenerallyBeneficial" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        <result column="is_generally_beneficial" property="isGenerallyBeneficial" javaType="java.lang.Integer"
+                jdbcType="INTEGER"/>
         <result column="is_central" property="isCentral" jdbcType="INTEGER"/>
         <result column="is_locked" property="isLocked"/>
     </resultMap>
+
+    <resultMap id="SchoolVoMap" type="com.winkel.qualityevaluation.vo.SchoolVo">
+        <result column="school_code" property="code" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_name" property="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location" property="location" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location_code" property="locationCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_location_type_code" property="locationTypeCode" javaType="java.lang.String"
+                jdbcType="VARCHAR"/>
+        <result column="school_type_code" property="typeCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="school_host_code" property="hostCode" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="is_register" property="isRegister" javaType="java.lang.Integer" jdbcType="INTEGER"/>
+        <result column="is_generally_beneficial" property="isGenerallyBeneficial" javaType="java.lang.Integer"
+                jdbcType="INTEGER"/>
+        <result column="is_central" property="isCentral" jdbcType="INTEGER"/>
+        <result column="is_locked" property="isLocked"/>
+        <result column="school_location_type_name" property="locationTypeName"/>
+        <result column="school_type_name" property="typeName"/>
+        <result column="school_host_name" property="hostName"/>
+    </resultMap>
+
+    <select id="selectSchoolVoBySchoolCode" resultMap="SchoolVoMap">
+        select s.school_code,
+               s.school_name,
+               s.school_location,
+               s.school_location_code,
+               s.school_location_type_code,
+               s.school_type_code,
+               s.school_host_code,
+               s.is_register,
+               s.is_generally_beneficial,
+               s.is_central,
+               s.is_locked,
+               tschoollocationtypecode.school_location_type_name,
+               tschooltypecode.school_type_name,
+               tschoolhostcode.school_host_name
+        from tschool as s,
+             tschoollocationtypecode,
+             tschooltypecode,
+             tschoolhostcode
+        where s.school_code = #{schoolCode}
+          and s.school_location_type_code = tschoollocationtypecode.school_location_type_code
+          and s.school_type_code = tschooltypecode.school_type_code
+          and s.school_host_code = tschoolhostcode.school_host_code
+    </select>
 
 </mapper>

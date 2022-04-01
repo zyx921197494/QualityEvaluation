@@ -19,7 +19,6 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = false)
 public class UserVo {
 
-    private String id;
     private String name;
     private String email;
 

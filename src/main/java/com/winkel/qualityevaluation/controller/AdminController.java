@@ -207,7 +207,7 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    // todo 同步修改其他评估数据
+    // todo 废弃
     @PostMapping("/updateSchool")
     public ResponseUtil updateSchool(@RequestBody School school) {
         if (StringUtils.isBlank(school.getCode())) {
@@ -315,7 +315,7 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    //todo 同时删除评估数据：代码删除 或 触发器
+    //todo 废弃 同时删除评估数据：代码删除 或 触发器
     @GetMapping("/deleteUser")
     public ResponseUtil deleteUser(@RequestParam String schoolCode) {
         School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
@@ -337,7 +337,7 @@ public class AdminController {
     /**
      * desc: 县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
      * 冻结以往周期所有的督评、复评数据
-     *       todo 校验是否督评、复评账号随周期更换
+     *       todo 校验是否督评、复评账号随周期更换 解锁 开启新周期/创建新用户时
      * params: [locationCode]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
@@ -353,7 +353,7 @@ public class AdminController {
             }
             List<EvaluateTask> tasks = taskService.list(new QueryWrapper<EvaluateTask>().eq("school_code", school.getCode()).eq("task_cycle", cycle));
             for (EvaluateTask task : tasks) {
-                if (!Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED)) {
+                if ((Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && task.getStatus() != 4) || (!Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && !Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED))) {
                     return new ResponseUtil(500, "县域内有幼儿园未完成全部评估任务");
                 }
             }
@@ -389,10 +389,10 @@ public class AdminController {
             success[i - 1] = taskService.saveBatch(taskList);
         }
         // 解锁县域内所有学校的自评账号，因为其不随周期变化而删除
-        boolean unlock = userService.unlockSelfUserByLocationCode(locationCode);
+        userService.unlockSelfUserByLocationCode(locationCode);
 
         //开启新周期
-        if (success[0] == success[1] == success[2] == success[3] == success[4] && taskService.startCycle(locationCode) && unlock) {
+        if (success[0] == success[1] == success[2] == success[3] == success[4] && taskService.startCycle(locationCode)) {
             log.info("启动 {} 幼儿园第 {} 周期的教学质量评估", locationCode, currentCycle);
             return new ResponseUtil(200, "成功启动 " + locationService.getOne(new QueryWrapper<Location>().eq("code", locationCode)).getName() + " 第 " + currentCycle + " 周期的教学质量评估");
         }
@@ -418,8 +418,12 @@ public class AdminController {
                 return new ResponseUtil(403, "不能重启未开始或已通过的评估");
             }
 
-            if (!(userService.unlockUserBySchoolCode(schoolCode, type) && taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", task.getId()).set("task_status", Const.TASK_IN_EVALUATION)))) {
-                return new ResponseUtil(500, "重启评估账号时错误");
+            if (!(userService.unlockUserBySchoolCode(schoolCode, type)
+                    && taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", task.getId())
+                    .set("task_status", Const.TASK_IN_EVALUATION)
+                    .set("evaluate_task_start_time", LocalDateTime.now())
+                    .set("evaluate_task_end_time", LocalDateTime.now().plusDays(15))))) {
+                return new ResponseUtil(500, "重启评估时账号错误");
             }
         }
         return new ResponseUtil(200, "重启评估成功");
@@ -438,7 +442,8 @@ public class AdminController {
         switch (authorities.get(0).getAuthority()) {
             case "ROLE_ADMIN_COUNTY": {
                 List<Integer> ids = taskService.getFinishTaskIdByCountyAdminId(getTokenUser(request).getId());
-                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (ids.isEmpty()) return new ResponseUtil(200, "没有已完成的评估任务及待审核报告");
+                Collection<EvaluateReportFile> reportFiles = reportFileService.list(new QueryWrapper<EvaluateReportFile>().in("task_id", ids));
                 if (reportFiles.isEmpty()) {
                     return new ResponseUtil(200, "没有待审核的督评或县复评报告");
                 }
@@ -446,7 +451,8 @@ public class AdminController {
             }
             case "ROLE_ADMIN_CITY": {
                 List<Integer> ids = taskService.getFinishTaskIdByCityAdminId(getTokenUser(request).getId());
-                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (ids.isEmpty()) return new ResponseUtil(200, "没有已完成的评估任务及待审核报告");
+                Collection<EvaluateReportFile> reportFiles = reportFileService.list(new QueryWrapper<EvaluateReportFile>().in("task_id", ids));
                 if (reportFiles.isEmpty()) {
                     return new ResponseUtil(200, "没有待审核的督评或县复评报告");
                 }
@@ -454,7 +460,8 @@ public class AdminController {
             }
             case "ROLE_ADMIN_PROVINCE": {
                 List<Integer> ids = taskService.getFinishTaskIdByProvinceAdminId(getTokenUser(request).getId());
-                Collection<EvaluateReportFile> reportFiles = reportFileService.listByIds(ids);
+                if (ids.isEmpty()) return new ResponseUtil(200, "没有已完成的评估任务及待审核报告");
+                Collection<EvaluateReportFile> reportFiles = reportFileService.list(new QueryWrapper<EvaluateReportFile>().in("task_id", ids));
                 if (reportFiles.isEmpty()) {
                     return new ResponseUtil(200, "没有待审核的督评或县复评报告");
                 }

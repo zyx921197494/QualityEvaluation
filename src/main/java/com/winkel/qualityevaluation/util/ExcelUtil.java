@@ -103,9 +103,9 @@ public class ExcelUtil {
      * return: void
      * exception:
      **/
-    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) {
+    public static <T> void writeExcel(List<T> list, String filePath, boolean writeTitle) throws IOException {
+        OutputStream out = null;
         try {
-            OutputStream out;
             File file = new File(filePath);
             Workbook workbook = getWorkbook(file);
             Sheet sheet = workbook.getSheetAt(0);
@@ -141,6 +141,10 @@ public class ExcelUtil {
             throw new ExcelException("写入Excel时读写权限异常");
         } catch (Exception e) {
             throw new RuntimeException("写入Excel发生未知异常");
+        }finally {
+            if (out != null) {
+                out.close();
+            }
         }
 
     }
