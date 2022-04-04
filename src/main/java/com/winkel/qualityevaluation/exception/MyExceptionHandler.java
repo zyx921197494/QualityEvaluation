@@ -2,16 +2,23 @@ package com.winkel.qualityevaluation.exception;
 
 
 import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.util.SecurityResponseUtil;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.ConstraintViolationException;
 
 /**
  * @ClassName MyExceptionHandler
@@ -57,5 +64,24 @@ public class MyExceptionHandler implements ResponseBodyAdvice<Object> {
         return ResponseUtil.response(500, e.getMessage(), null);
     }
 
+    @ExceptionHandler(TaskException.class)
+    public ResponseUtil handleTaskException(Exception e) {
+        return ResponseUtil.response(500, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseUtil handleNullPointerException(Exception e) {
+        return ResponseUtil.response(500, "空指针异常", null);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseUtil handleMissingServletRequestParameterException(Exception e) {
+        return ResponseUtil.response(500, ((MissingServletRequestParameterException)e).getMessage(), null);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseUtil handleConstraintViolationException(Exception e) {
+        return ResponseUtil.response(500,((MethodArgumentNotValidException)e).getBindingResult().getFieldError().getDefaultMessage(), null);
+    }
 
 }

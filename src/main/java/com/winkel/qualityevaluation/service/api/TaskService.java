@@ -14,6 +14,8 @@ public interface TaskService extends IService<EvaluateTask> {
 
     Integer getTaskIdByUserId(String userId, Integer taskType);
 
+    Integer getAllTaskIdByUserId(String userId, Integer taskType);
+
 //    EvaluateTask getTaskByUserId(String userId, Integer taskType);
 
     List<Integer> getFinishTaskIdByCountyAdminId(String userId);

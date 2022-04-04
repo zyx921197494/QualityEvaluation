@@ -22,10 +22,13 @@ import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -243,7 +246,7 @@ public class SelfController {
     @SneakyThrows
     @GetMapping("/exportEvaluation")
     public ResponseUtil exportEvaluation(HttpServletRequest request) {
-        Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SELF);
+        Integer taskId = taskService.getAllTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SELF);
         List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
 
         List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
@@ -285,7 +288,7 @@ public class SelfController {
         User user = getTokenUser(request);
 //        EvaluateTask task = taskService.getTaskByUserId(user.getId(), getTaskTypeFromTokenUser(request));
 //        System.out.println("task = " + task);
-        Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
+        Integer taskId = taskService.getAllTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
         EvaluateTask task = taskService.getById(taskId);
 
         if (task.getStatus() < Const.TASK_DATA_SUBMITTED) {
@@ -318,7 +321,7 @@ public class SelfController {
     @PostMapping("/uploadSelfReport")
     public ResponseUtil uploadSelfReport(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
         User user = getTokenUser(request);
-        Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
+        Integer taskId = taskService.getAllTaskIdByUserId(user.getId(), Const.TASK_TYPE_SELF);
         Integer taskStatus = taskService.getOne(new QueryWrapper<EvaluateTask>().eq("evaluate_task_id", taskId)).getStatus();
 
         if (taskStatus.equals(Const.TASK_REPORT_ACCEPTED)) return new ResponseUtil(500, "报告已审核通过，无法再次提交");
@@ -368,6 +371,32 @@ public class SelfController {
 
         return new ResponseUtil(500, "上传报告时失败", result.getMsg());
     }
+
+
+    /**
+     * desc: 园长下载督评和各级复评报告
+     * params: [request, type] type：意见书类型，督评2、县复评3、市复评4、省复评5
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/downloadReport")
+    public ResponseUtil downloadReport(HttpServletRequest request, Integer type) {
+        if (type < 2 || type > 5) {
+            return new ResponseUtil(500, "参数范围错误");
+        }
+        Integer taskId = taskService.getAllTaskIdByUserId(getTokenUser(request).getId(), type);
+        System.out.println("taskId = " + taskId);
+        EvaluateReportFile report = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("task_id", taskId));
+        if (report == null) {
+            return new ResponseUtil(200, "该类型报告还未上传");
+        }
+        boolean success = ossUtil.downloadSimple(report.getFileName(), null);
+        if (success) {
+            return new ResponseUtil(200, "下载报告成功");
+        }
+        return new ResponseUtil(200, "下载报告时出错");
+    }
+
 
     private User getTokenUser(HttpServletRequest request) {
         return JWTUtil.parseJWTUser(request.getHeader(Const.TOKEN_HEADER).substring(Const.STARTS_WITH.length()));

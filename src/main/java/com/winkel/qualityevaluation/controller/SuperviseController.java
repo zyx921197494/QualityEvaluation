@@ -279,7 +279,7 @@ public class SuperviseController {
     @SneakyThrows
     @GetMapping("/exportEvaluation")
     public ResponseUtil exportEvaluation(HttpServletRequest request) {
-        Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
+        Integer taskId = taskService.getAllTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
         List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
 
         List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
@@ -320,7 +320,7 @@ public class SuperviseController {
     @GetMapping("/exportEvidence")
     public ResponseUtil exportEvidence(HttpServletRequest request) {
         User user = getTokenUser(request);
-        Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SUPERVISOR);
+        Integer taskId = taskService.getAllTaskIdByUserId(user.getId(), Const.TASK_TYPE_SUPERVISOR);
         EvaluateTask task = taskService.getById(taskId);
 
         if (task.getStatus() < Const.TASK_DATA_SUBMITTED) {
@@ -354,7 +354,7 @@ public class SuperviseController {
     @PostMapping("/uploadSuperviseReport")
     public ResponseUtil uploadSelfReport(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
         User user = getTokenUser(request);
-        Integer taskId = taskService.getTaskIdByUserId(user.getId(), Const.TASK_TYPE_SUPERVISOR);
+        Integer taskId = taskService.getAllTaskIdByUserId(user.getId(), Const.TASK_TYPE_SUPERVISOR);
         Integer taskStatus = taskService.getOne(new QueryWrapper<EvaluateTask>().eq("evaluate_task_id", taskId)).getStatus();
 
         if (taskStatus.equals(Const.TASK_REPORT_ACCEPTED)) return new ResponseUtil(500, "报告已审核通过，无法再次提交");
