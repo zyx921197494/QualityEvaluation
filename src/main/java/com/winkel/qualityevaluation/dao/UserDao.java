@@ -28,4 +28,6 @@ public interface UserDao extends BaseMapper<User> {
 
     List<AccountVo> selectAccountBySchoolCodeAndAuthorityType(@Param("schoolCode") String schoolCode, @Param("authorityId") Integer authorityId);
 
+    List<User> selectAllUserByTaskId(@Param("taskId") Integer taskId);
+
 }

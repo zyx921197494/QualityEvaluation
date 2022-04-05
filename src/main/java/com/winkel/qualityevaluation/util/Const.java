@@ -53,4 +53,9 @@ public class Const {
     public final static String TOKEN_HEADER = "Authorization";
     public final static String STARTS_WITH = "Bearer ";
 
+    //Redis
+    public final static Integer REDIS_CODE_RIGHT = 1;
+    public final static Integer REDIS_CODE_TIMEOUT = 2;
+    public final static Integer REDIS_CODE_ERROR = 3;
+
 }

@@ -114,5 +114,19 @@
           and CONCAT(LEFT(school.school_location_code, 6), '000000') = cycle.cycle_county_location_code
     </select>
 
+    <select id="selectAllUserByTaskId" resultType="com.winkel.qualityevaluation.entity.User">
+        select user.id
+        from user,
+             authority,
+             user_authority,
+             evaluatetask as task
+        where user.school_code = task.school_code
+          and user.cycle = task.task_cycle
+          and task.task_type = (user_authority.authority_id - 4)
+          and user.id = user_authority.user_id
+          and user_authority.authority_id = authority.id
+          and task.evaluate_task_id = #{taskId}
+    </select>
+
 
 </mapper>

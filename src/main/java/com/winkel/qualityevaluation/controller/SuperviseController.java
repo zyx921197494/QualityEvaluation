@@ -8,6 +8,7 @@ package com.winkel.qualityevaluation.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.winkel.qualityevaluation.config.mq.Producer;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
 import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
@@ -16,6 +17,7 @@ import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
+import com.winkel.qualityevaluation.vo.ConsumerVo;
 import com.winkel.qualityevaluation.vo.Index3Vo;
 import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.SneakyThrows;
@@ -28,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -60,6 +63,8 @@ public class SuperviseController {
     @Autowired
     private MailUtil mailUtil;
 
+    @Autowired
+    private Producer producer;
 
     /**
      * desc: 督评组长开启自评(更新task)
@@ -80,6 +85,9 @@ public class SuperviseController {
                 .set("task_status", Const.TASK_IN_EVALUATION)
                 .set("evaluate_task_start_time", LocalDateTime.now())
                 .set("evaluate_task_end_time", LocalDateTime.now().plusDays(15)))) {
+            List<User> userList = userService.getAllUserByTaskId(taskId);
+            ConsumerVo vo = new ConsumerVo().setTaskId(taskId).setUserList(userList);
+            producer.sendMsg("delayexchange", "delaykey", vo);
             return new ResponseUtil(200, "开启督评成功");
         }
         return new ResponseUtil(500, "开启督评失败");
@@ -255,8 +263,9 @@ public class SuperviseController {
     @GetMapping("/finishEvaluation")
     public ResponseUtil finishEvaluation(HttpServletRequest request, @RequestParam String email, @RequestParam String code) {
         // 校验邮箱验证码
-        if (!mailUtil.validateEmailCode(email, code)) {
-            return new ResponseUtil(500, "验证码错误");
+        RedisResult result = mailUtil.validateEmailCode(email, code);
+        if (!Objects.equals(result.getStatus(), Const.REDIS_CODE_RIGHT)) {
+            return new ResponseUtil(500, result.getMsg());
         }
         User user = getTokenUser(request);
         User dbUser = userService.getOne(new QueryWrapper<User>().eq("id", user.getId()).select("school_code", "cycle"));

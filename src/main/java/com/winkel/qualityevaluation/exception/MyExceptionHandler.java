@@ -76,12 +76,17 @@ public class MyExceptionHandler implements ResponseBodyAdvice<Object> {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseUtil handleMissingServletRequestParameterException(Exception e) {
-        return ResponseUtil.response(500, ((MissingServletRequestParameterException)e).getMessage(), null);
+        return ResponseUtil.response(500, ((MissingServletRequestParameterException) e).getMessage(), null);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseUtil handleConstraintViolationException(Exception e) {
-        return ResponseUtil.response(500,((MethodArgumentNotValidException)e).getBindingResult().getFieldError().getDefaultMessage(), null);
+        return ResponseUtil.response(500, ((MethodArgumentNotValidException) e).getBindingResult().getFieldError().getDefaultMessage(), null);
+    }
+
+    @ExceptionHandler(ConsumerException.class)
+    public ResponseUtil handleConsumerException(Exception e) {
+        return ResponseUtil.response(500, e.getMessage());
     }
 
 }

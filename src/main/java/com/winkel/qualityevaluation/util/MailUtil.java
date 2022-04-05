@@ -15,6 +15,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import javax.mail.internet.MimeMessage;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class MailUtil {
@@ -36,7 +37,7 @@ public class MailUtil {
             helper.setText("你的验证码为：" + code + " ，请在 3 分钟内验证", false);
             helper.setTo(email);
             helper.setFrom("921197494@qq.com");
-            redisTemplate.opsForValue().set(email, code);
+            redisTemplate.opsForValue().set(email, code, 180, TimeUnit.SECONDS);
             mailSender.send(message);
         } catch (Exception e) {
             return false;
@@ -44,8 +45,15 @@ public class MailUtil {
         return true;
     }
 
-    public boolean validateEmailCode(String email, String code) {
-        return StringUtils.equals(redisTemplate.opsForValue().get(email), code);
+    public RedisResult validateEmailCode(String email, String code) {
+        String key = redisTemplate.opsForValue().get(email);
+        if (key == null) {
+            return new RedisResult().setStatus(Const.REDIS_CODE_TIMEOUT).setMsg("验证码已过期");
+        }
+        if (StringUtils.equals(key, code)) {
+            return new RedisResult().setStatus(Const.REDIS_CODE_RIGHT).setMsg("验证码正确");
+        }
+        return new RedisResult().setStatus(Const.REDIS_CODE_ERROR).setMsg("验证码错误");
     }
 
 }

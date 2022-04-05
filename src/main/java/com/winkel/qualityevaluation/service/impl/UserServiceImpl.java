@@ -187,4 +187,10 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
     public List<AccountVo> getAccountBySchoolCodeAndAuthorityType(String schoolCode, Integer authorityId) {
         return userDao.selectAccountBySchoolCodeAndAuthorityType(schoolCode, authorityId);
     }
+
+    @Override
+    public List<User> getAllUserByTaskId(Integer taskId) {
+        return userDao.selectAllUserByTaskId(taskId);
+    }
+
 }

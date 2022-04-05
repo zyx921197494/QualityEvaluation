@@ -42,5 +42,13 @@ public interface UserService extends IService<User> {
      * exception:
      **/
     List<AccountVo> getAccountBySchoolCodeAndAuthorityType(String schoolCode, Integer authorityId);
+    
+    /**
+     * desc: 由任务id查询该任务的所有评估用户
+     * params: [taskId]
+     * return: java.util.List<com.winkel.qualityevaluation.entity.User>
+     * exception:
+     **/
+    List<User> getAllUserByTaskId(Integer taskId);
 
 }
