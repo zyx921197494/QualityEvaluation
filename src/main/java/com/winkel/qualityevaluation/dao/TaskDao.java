@@ -2,9 +2,12 @@ package com.winkel.qualityevaluation.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
+import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
+import com.winkel.qualityevaluation.vo.SchoolTaskVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -38,5 +41,12 @@ public interface TaskDao extends BaseMapper<EvaluateTask> {
 //
 //    List<EvaluateTask> selectProvinceTask(@Param("locationCode") String locationCode);
 
+    List<SchoolTaskVo> listAllBySort(@Param("schoolTaskDTO") SchoolTaskDTO schoolTaskDTO);
+
+    LocalDateTime selectLastSubmitTimeByTaskId(@Param("taskId") Integer taskId);
+
+    List<String> selectFileNameBySchoolcodeAndType(@Param("schoolCodes") List<String> schoolCodes, @Param("type") Integer type);
+
+    Integer getTaskIdByBySchoolcodeAndType(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
 
 }

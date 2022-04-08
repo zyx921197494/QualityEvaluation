@@ -132,32 +132,6 @@ public class EvaluateCommonController {
 
 
     /**
-     * desc: 通用下载文件接口。默认保存在 C:\Users\Public\Downloads\ 路径下
-     * params: [filename]
-     * return: com.winkel.qualityevaluation.util.ResponseUtil
-     * exception:
-     **/
-    @GetMapping("/download")
-    public ResponseUtil download(@RequestParam("filename") String filename) {
-        if (!ossUtil.isExist(filename)) {
-            return new ResponseUtil(500, "文件路径错误，文件不存在");
-        }
-        if (ossUtil.getFileSize(filename) > 10000000L) {
-            if (ossUtil.downloadWithBreakpoint(filename, null)) {
-                log.info("断点续传下载文件 {}", filename);
-                return new ResponseUtil(200, "下载成功");
-            }
-        } else {
-            if (ossUtil.downloadSimple(filename, null)) {
-                log.info("直接下载文件 {}", filename);
-                return new ResponseUtil(200, "下载成功");
-            }
-
-        }
-        return new ResponseUtil(500, "下载失败");
-    }
-
-    /**
      * desc: 发送验证码
      * params: [email]
      * return: com.winkel.qualityevaluation.util.ResponseUtil

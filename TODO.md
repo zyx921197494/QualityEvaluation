@@ -20,6 +20,7 @@
 10. OSS createOSSException：
 11. FileNotFoundException：系统找不到指定的路径
 12. IllegalArgumentException: argument type mismatch 某个实体类的ID策略有问题
+13. java.io.FileNotFoundException: C:\Users\Public\Downloads\评估数据批量导出\评估数据.xlsx (另一个程序正在使用此文件，进程无法访问。)
    
 ```java
    @ControllerAdvice

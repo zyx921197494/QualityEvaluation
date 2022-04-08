@@ -188,6 +188,7 @@ public class OssUtil {
         request.setEnableCheckpoint(true);
         try {
             ossClient.downloadFile(request);
+            log.info("下载文件 {} 至 {}",filename, path);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             return false;
@@ -210,7 +211,7 @@ public class OssUtil {
         String path = StringUtils.isBlank(localpath) ? defaultpath + filename : localpath + filename;
         try {
             ossClient.getObject(new GetObjectRequest(config.getBucketName(), fileUrl), new File(path));
-
+            log.info("下载文件 {} 至 {}",filename, path);
         } catch (OSSException e) {
             return false;
         }
@@ -227,6 +228,28 @@ public class OssUtil {
             log.info("分片上传证据，当前文件大小 {} MB", file.getSize() >> 20);
         }
         return result;
+    }
+
+
+    public void downloadList(List<String> filenames, String localPath) {
+        for (String filename : filenames) {
+            if (!isExist(filename)) {
+                throw new OSSException("文件路径错误，文件不存在");
+            }
+            if (getFileSize(filename) > 10000000L) {
+                if (downloadWithBreakpoint(filename, localPath)) {
+                    log.info("断点续传下载文件 {}", filename);
+                }
+            } else {
+                if (downloadSimple(filename, localPath)) {
+                    log.info("直接下载文件 {}", filename);
+                }
+            }
+        }
+    }
+
+    public void downloadList(List<String> filenames) {
+        downloadList(filenames, null);
     }
 
 

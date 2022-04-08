@@ -109,7 +109,8 @@ public class ExcelUtil {
             File file = new File(filePath);
             Workbook workbook = getWorkbook(file);
             Sheet sheet = workbook.getSheetAt(0);
-            int begin = 0;
+            sheet.createFreezePane( 0, 1, 0, 1 );
+            int begin = sheet.getPhysicalNumberOfRows();  // 从最后一行开始续写
             // 添加表头
             if (writeTitle) {
                 ++begin;
@@ -141,13 +142,65 @@ public class ExcelUtil {
             throw new ExcelException("写入Excel时读写权限异常");
         } catch (Exception e) {
             throw new RuntimeException("写入Excel发生未知异常");
-        }finally {
+        } finally {
             if (out != null) {
                 out.close();
             }
         }
 
     }
+
+    public static <T> void writeObjectToExcel(Object object, String filePath, boolean writeTitle) throws IOException {
+        OutputStream out = null;
+        try {
+            File file = new File(filePath);
+            Workbook workbook = getWorkbook(file);
+            Sheet sheet = workbook.getSheetAt(0);
+            sheet.createFreezePane( 0, 1, 0, 1 );  // 冻结表头第一行
+            int begin = sheet.getPhysicalNumberOfRows();  // 从最后一行开始续写
+            // 添加表头
+            if (writeTitle) {
+                ++begin;
+                Field[] fields = object.getClass().getDeclaredFields();
+                Row title = sheet.createRow(0);
+                for (int i = 0; i < fields.length; i++) {
+                    Cell cell = title.createCell(i);
+                    cell.setCellValue(fields[i].getName());
+                }
+            }
+
+            Row row = sheet.createRow(begin);
+            T bean = (T) object;
+            Field[] fields = bean.getClass().getDeclaredFields();
+            for (int j = 0; j < fields.length; j++) { // 对象中的每个属性
+                Cell cell = row.createCell(j);
+                fields[j].setAccessible(true);
+                if (fields[j].get(bean) == null) {
+                    cell.setCellValue("");
+                } else {
+                    CellStyle style = workbook.createCellStyle();
+                    style.setFillForegroundColor((short) 13);  // 北京设为黄色
+                    style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    cell.setCellValue(fields[j].get(bean).toString());
+                    cell.setCellStyle(style);
+                }
+            }
+            out = new FileOutputStream(filePath);
+            workbook.write(out);
+        } catch (IOException e) {
+            throw new ExcelException("写入Excel时发生IO异常");
+        } catch (IllegalAccessException e) {
+            throw new ExcelException("写入Excel时读写权限异常");
+        } catch (Exception e) {
+            throw new RuntimeException("写入Excel发生未知异常");
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
+
+    }
+
 
 //    public static <T> void createTitle(List<T> beans, Sheet sheet) {
 //        Row row = sheet.createRow(0);

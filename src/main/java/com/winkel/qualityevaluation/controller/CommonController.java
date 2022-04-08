@@ -10,19 +10,22 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.winkel.qualityevaluation.entity.Location;
 import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.LocationService;
+import com.winkel.qualityevaluation.service.api.SchoolService;
 import com.winkel.qualityevaluation.service.api.UserService;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.JWTUtil;
+import com.winkel.qualityevaluation.util.OssUtil;
 import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.vo.SchoolVo;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/universal")
 public class CommonController {
@@ -32,6 +35,28 @@ public class CommonController {
 
     @Autowired
     private LocationService locationService;
+
+    @Autowired
+    private SchoolService schoolService;
+
+    @Autowired
+    private OssUtil ossUtil;
+
+    /**
+     * desc:
+     * params:
+     * return:
+     * exception:
+     **/
+    @GetMapping("/schoolInfo")
+    public ResponseUtil schoolInfo(@RequestParam String schoolCode) {
+        SchoolVo school = schoolService.getSchoolVoBySchoolCode(schoolCode);
+        if (school == null) {
+            return new ResponseUtil(200, "幼儿园信息为空");
+        }
+        return new ResponseUtil(200, "查询幼儿园信息成功", school);
+    }
+
 
     /**
      * desc: 获取省级行政区列表
@@ -44,7 +69,7 @@ public class CommonController {
         return new ResponseUtil(200, "查询一级行政区成功", locationService.list(new QueryWrapper<Location>().eq("type", 1).select("code", "name")));
     }
 
-    
+
     /**
      * desc: 获取locationCode下属的行政区编码及名称
      * params: [locationCode]
@@ -66,6 +91,19 @@ public class CommonController {
     @GetMapping("/currentRole")
     public String currentRole(HttpServletRequest request) {
         return StringUtils.substringAfter(userService.getAuthorities(getTokenUser(request).getUsername()).get(0).getAuthority(), "_");
+    }
+
+
+    /**
+     * desc: 通用下载文件接口。默认保存在 C:\Users\Public\Downloads\ 路径下
+     * params: [filename]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/download")
+    public ResponseUtil download(@RequestParam("filename") List<String> filenames) {
+        ossUtil.downloadList(filenames);
+        return new ResponseUtil(500, "下载成功");
     }
 
     private User getTokenUser(HttpServletRequest request) {

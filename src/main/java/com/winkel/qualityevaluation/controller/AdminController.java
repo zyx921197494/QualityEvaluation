@@ -6,30 +6,29 @@ package com.winkel.qualityevaluation.controller;
   @Date 2022-03-14 14:43
   */
 
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winkel.qualityevaluation.entity.*;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
 import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
+import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
+import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
-import com.winkel.qualityevaluation.vo.AccountVo;
+import com.winkel.qualityevaluation.vo.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -55,6 +54,15 @@ public class AdminController {
 
     @Autowired
     private LocationReportService locationReportService;
+
+    @Autowired
+    private SubmitService submitService;
+
+    @Autowired
+    private Index3Service index3Service;
+
+    @Autowired
+    private SubmitFileService submitFileService;
 
     @Autowired
     private OssUtil ossUtil;
@@ -198,6 +206,135 @@ public class AdminController {
             return schoolService.page(page, isPublic == 1 ? wrapper.ne("school_host_code", "999") : wrapper.eq("school_host_code", "999"));
         }
         return schoolService.page(page, wrapper);
+    }
+
+
+    /**
+     * desc: 按照省、市、区、城市/农村、公办/民办、普惠/非普惠、各级评估（自评、督评、县级复评 1、县级复评 2、市级复评、省级复评）的评估状态（未开始 / 评估中 /数据已提交 / 报告已提交）、评估启动时间、幼儿园名称中的关键字搜索幼儿园。
+     * params: [schoolTaskDTO]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/schoolTask")
+    public ResponseUtil schoolTask(@RequestBody SchoolTaskDTO schoolTaskDTO) {
+        if (schoolTaskDTO.getCurrentPage() == null || schoolTaskDTO.getPageSize() == null) {
+            return new ResponseUtil(500, "请求中未包含分页参数");
+        }
+        schoolTaskDTO.setCurrentPage(schoolTaskDTO.getCurrentPage() - 1);
+        List<SchoolTaskVo> schoolTaskVos = taskService.listAllBySort(schoolTaskDTO);
+        if (schoolTaskVos.isEmpty()) {
+            return new ResponseUtil(200, "未查询到此类型数据");
+        }
+        for (SchoolTaskVo vo : schoolTaskVos) {
+            vo.setLastSubmit(taskService.getLastSubmitTimeByTaskId(vo.getTaskId()));
+        }
+        return new ResponseUtil(200, "查询成功", schoolTaskVos);
+    }
+
+
+    /**
+     * desc: 评估数据管理 3、查看评估数据和证据文件。不能修改评估数据
+     * params: [schoolCode, taskType]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getEvaluationData")
+    public ResponseUtil getEvaluationData(@RequestParam String schoolCode, @RequestParam Integer taskType) {
+        Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(schoolCode, taskType);
+        List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
+
+        List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
+        for (EvaluateSubmit submit : submits) {
+            EvaluateIndex3 index = index3Service.getOne(new QueryWrapper<EvaluateIndex3>().eq("evaluate_index3_id", submit.getIndex3Id()));
+            index3VoList.add(new Index3Vo()
+                    .setIndex3id(index.getIndex3Id())
+                    .setIndex3Name(index.getIndex3Name())
+                    .setIndex3Content(index.getIndex3Content())
+                    .setType(index.getType() == 1 ? "判断" : index.getType() == 2 ? "单选" : "多选")
+                    .setMemo(index.getMemo())
+                    .setSubmitTime(submit.getSubmitTime())
+                    .setContent(submit.getContent()));
+        }
+        List<EvaluateSubmitFile> fileList = submitFileService.list(new QueryWrapper<EvaluateSubmitFile>().eq("evaluate_task_id", taskId));
+        HashMap<String, List> resultMap = new HashMap<>();
+        resultMap.put("评估数据", index3VoList);
+        resultMap.put("证据文件", fileList);
+        return new ResponseUtil(200, "查询幼儿园评估数据成功", resultMap);
+    }
+
+
+    /**
+     * desc: 评估数据管理 4、导出地区内评估数据
+     * params: [schools, taskType] schools:对象包括 code标识码 和 name学校名称
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @SneakyThrows
+    @PostMapping("/exportEvaluationData")
+    public ResponseUtil exportEvaluationData(@RequestBody List<SimpleSchoolVo> schools, @RequestParam Integer taskType) {
+        ArrayList<List<Index3Vo>> data = new ArrayList<>();
+        ArrayList<SimpleSchoolVo> schoolList = new ArrayList<>();
+        for (SimpleSchoolVo school : schools) {
+            log.info("当前学校{}", school);
+            Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(school.getCode(), taskType);
+            List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
+
+            List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
+            for (EvaluateSubmit submit : submits) {
+                EvaluateIndex3 index = index3Service.getOne(new QueryWrapper<EvaluateIndex3>().eq("evaluate_index3_id", submit.getIndex3Id()));
+                index3VoList.add(new Index3Vo()
+                        .setIndex3id(index.getIndex3Id())
+                        .setIndex3Name(index.getIndex3Name())
+                        .setIndex3Content(index.getIndex3Content())
+                        .setType(index.getType() == 1 ? "判断" : index.getType() == 2 ? "单选" : "多选")
+                        .setMemo(index.getMemo())
+                        .setSubmitTime(submit.getSubmitTime())
+                        .setContent(submit.getContent()));
+            }
+            if (!index3VoList.isEmpty()) {  // 有的学校评估未启动没有数据，但仍在请求参数中。新开list避免Excel写入空数据
+                data.add(index3VoList);
+                schoolList.add(new SimpleSchoolVo().setCode(school.getCode()).setName(school.getName()));
+                log.info("list大小{}   {}", data.size(), schoolList.size());
+            }
+        }
+
+        String directoryPath = "C:\\Users\\Public\\Downloads\\评估数据批量导出\\";
+        File path = new File(directoryPath);
+        File file = new File(directoryPath + "评估数据.xlsx");
+        path.mkdir();
+
+        ossUtil.downloadSimple("评估数据.xlsx", directoryPath);
+        log.info("下载文件模板文件 评估数据.xlsx");
+        if (file.exists()) {
+            for (int i = 0; i < data.size(); i++) {
+                SimpleSchoolVo simpleSchoolVo = schoolList.get(i);
+                ExcelUtil.writeObjectToExcel(simpleSchoolVo, file.getAbsolutePath(), true);
+                if (i == 1) {
+                    ExcelUtil.writeExcel(data.get(i), file.getAbsolutePath(), true);  // 第一次写入评估数据时加入表头
+                }
+                ExcelUtil.writeExcel(data.get(i), file.getAbsolutePath(), false);
+            }
+            return new ResponseUtil(200, "导出评估数据文件成功");
+        }
+
+        return new ResponseUtil(200, "导出幼儿园评估数据成功");
+    }
+
+
+    /**
+     * desc: 批量下载报告文件
+     * params: [schoolCodes, type] type：报告类型(1-5)
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/downloadReport")
+    public ResponseUtil downloadReport(@RequestBody List<String> schoolCodes, @RequestParam Integer type) {
+        List<String> filenames = taskService.getFileNameBySchoolcodeAndType(schoolCodes, type);
+        String path = "C:\\Users\\Public\\Downloads\\报告下载\\";
+        File file = new File(path);
+        file.mkdir();
+        ossUtil.downloadList(filenames, path);
+        return new ResponseUtil(200, "下载报告成功");
     }
 
 
@@ -408,7 +545,8 @@ public class AdminController {
      * @exception:
      **/
     @PostMapping("/resetEvaluation")
-    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer type) {
+    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer
+            type) {
         for (String schoolCode : schoolCodeList) {
             School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
             Integer cycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
@@ -479,15 +617,18 @@ public class AdminController {
      * exception:
      **/
     @GetMapping("/auditReport")
-    public ResponseUtil auditReport(@RequestParam Integer reportFileId, @RequestParam Integer isAccept) {
-        Integer taskId = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("report_file_id", reportFileId).select("task_id")).getTaskId();
-        boolean update = taskService.update(new UpdateWrapper<EvaluateTask>()
-                .eq("evaluate_task_id", taskId)
-                .set("task_status", isAccept == 1 ? Const.TASK_REPORT_ACCEPTED : Const.TASK_REPORT_REFUSED));
-        if (update) {
-            return new ResponseUtil(200, "审核报告成功");
+    public ResponseUtil auditReport(@RequestBody List<String> reportFileIds, @RequestParam Integer isAccept) {
+        for (String reportFileId : reportFileIds) {
+            Integer taskId = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("report_file_id", reportFileId).select("task_id")).getTaskId();
+            boolean update = taskService.update(new UpdateWrapper<EvaluateTask>()
+                    .eq("evaluate_task_id", taskId)
+                    .set("task_status", isAccept == 1 ? Const.TASK_REPORT_ACCEPTED : Const.TASK_REPORT_REFUSED));
+            if (update) {
+                log.info("审核报告成功，reportFileId={}", reportFileId);
+            }
+            log.info("审核报告失败，reportFileId={}", reportFileId);
         }
-        return new ResponseUtil(500, "审核报告失败");
+        return new ResponseUtil(200, "审核报告成功");
     }
 
 
@@ -498,7 +639,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/uploadLocationReport")
-    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer year, @RequestParam("file") MultipartFile file) {
+    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer
+            year, @RequestParam("file") MultipartFile file) {
         String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         LocationReport report = locationReportService.getOne(new QueryWrapper<LocationReport>().eq("location_code", locationCode).eq("year", year));
         boolean reUpload = false;  // 是否是覆盖区域报告

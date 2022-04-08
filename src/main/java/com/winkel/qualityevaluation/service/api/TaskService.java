@@ -2,8 +2,10 @@ package com.winkel.qualityevaluation.service.api;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
-import org.apache.ibatis.annotations.Param;
+import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
+import com.winkel.qualityevaluation.vo.SchoolTaskVo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskService extends IService<EvaluateTask> {
@@ -36,5 +38,12 @@ public interface TaskService extends IService<EvaluateTask> {
 //
 //    List<EvaluateTask> getProvinceTask(String locationCode);
 
+    List<SchoolTaskVo> listAllBySort(SchoolTaskDTO schoolTaskDTO);
+
+    LocalDateTime getLastSubmitTimeByTaskId(Integer taskId);
+
+    List<String> getFileNameBySchoolcodeAndType(List<String> schoolCodes, Integer type);
+
+    Integer getTaskIdByBySchoolcodeAndType(String schoolCode, Integer type);
 
 }

@@ -7,9 +7,12 @@ import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.exception.TaskException;
 import com.winkel.qualityevaluation.service.api.TaskService;
 import com.winkel.qualityevaluation.util.Const;
+import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
+import com.winkel.qualityevaluation.vo.SchoolTaskVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -93,4 +96,26 @@ public class TaskServiceImpl extends ServiceImpl<TaskDao, EvaluateTask> implemen
 //    public List<EvaluateTask> getProvinceTask(String locationCode) {
 //        return taskDao.selectProvinceTask(locationCode);
 //    }
+
+
+    @Override
+    public List<SchoolTaskVo> listAllBySort(SchoolTaskDTO schoolTaskDTO) {
+        return taskDao.listAllBySort(schoolTaskDTO);
+    }
+
+    @Override
+    public LocalDateTime getLastSubmitTimeByTaskId(Integer taskId) {
+        return taskDao.selectLastSubmitTimeByTaskId(taskId);
+    }
+
+    @Override
+    public List<String> getFileNameBySchoolcodeAndType(List<String> schoolCodes, Integer type) {
+        return taskDao.selectFileNameBySchoolcodeAndType(schoolCodes, type);
+    }
+
+    @Override
+    public Integer getTaskIdByBySchoolcodeAndType(String schoolCode, Integer type) {
+        return taskDao.getTaskIdByBySchoolcodeAndType(schoolCode, type);
+    }
+
 }
