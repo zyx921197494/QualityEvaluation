@@ -14,12 +14,11 @@ import com.winkel.qualityevaluation.exception.AccountException;
 import com.winkel.qualityevaluation.exception.AuthorityNotFoundException;
 import com.winkel.qualityevaluation.service.impl.UserServiceImpl;
 import com.winkel.qualityevaluation.util.JWTUtil;
+import com.winkel.qualityevaluation.util.ResponseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.LockedException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +32,12 @@ public class UserController {
     private UserServiceImpl userService;
 
     @PostMapping("/login")
-    public Map<String, Object> login(String username, String password) {
+    public ResponseUtil login(@RequestBody User loginUser) {
         System.out.println("登录。。。。。。");
+        String username = loginUser.getUsername();
+        String password = loginUser.getPassword();
         if (!StringUtils.isNotBlank(username) || !StringUtils.isNotBlank(password)) {
-            throw new AccountException("用户名或密码为空");
+            return new ResponseUtil(500, "用户名或密码不能为空");
         }
 
         //数据库检查登录用户合法性
@@ -68,8 +69,8 @@ public class UserController {
 //            //存储认证信息
 //            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            return tokenMap;
+            return new ResponseUtil(200, "登陆成功", tokenMap);
         }
-        throw new AccountException("用户名或密码错误");
+        return new ResponseUtil(500, "用户名或密码错误");
     }
 }

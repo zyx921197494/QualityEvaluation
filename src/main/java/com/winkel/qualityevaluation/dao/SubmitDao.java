@@ -3,6 +3,7 @@ package com.winkel.qualityevaluation.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.vo.CountDTO;
+import com.winkel.qualityevaluation.vo.Index2Vo;
 import com.winkel.qualityevaluation.vo.ScoreDTO;
 import com.winkel.qualityevaluation.vo.ScoreVo;
 import org.apache.ibatis.annotations.Mapper;
@@ -56,7 +57,9 @@ public interface SubmitDao extends BaseMapper<EvaluateSubmit> {
 //
 //    List<ScoreVo> selectIndex1ByIsRegister(@Param("scoreDTO") ScoreDTO scoreDTO);
 
+    List<Index2Vo> selectComplete(@Param("taskId") Integer taskId);
 
+    List<Index2Vo> selectIndex2();
 
 
 

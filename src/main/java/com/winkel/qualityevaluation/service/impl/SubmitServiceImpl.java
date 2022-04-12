@@ -5,6 +5,7 @@ import com.winkel.qualityevaluation.dao.SubmitDao;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.service.api.SubmitService;
 import com.winkel.qualityevaluation.vo.CountDTO;
+import com.winkel.qualityevaluation.vo.Index2Vo;
 import com.winkel.qualityevaluation.vo.ScoreDTO;
 import com.winkel.qualityevaluation.vo.ScoreVo;
 import org.apache.poi.ss.formula.functions.Count;
@@ -98,4 +99,15 @@ public class SubmitServiceImpl extends ServiceImpl<SubmitDao, EvaluateSubmit> im
     public Double getCountByLocationCodeAndType(CountDTO CountDTO) {
         return submitDao.selectCountByLocationCodeAndType(CountDTO);
     }
+
+    @Override
+    public List<Index2Vo> getComplete(Integer taskId) {
+        return submitDao.selectComplete(taskId);
+    }
+
+    @Override
+    public List<Index2Vo> getIndex2() {
+        return submitDao.selectIndex2();
+    }
+
 }

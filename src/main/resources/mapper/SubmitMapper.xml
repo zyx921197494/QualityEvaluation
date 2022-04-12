@@ -24,6 +24,11 @@
         <result column="is_register" property="isRegister"/>
     </resultMap>
 
+    <resultMap id="index2Map" type="com.winkel.qualityevaluation.vo.Index2Vo">
+        <result column="count(index2.evaluate_index2_id)" property="count"/>
+        <result column="evaluate_index2_id" property="index2Id"/>
+    </resultMap>
+
     <select id="selectAllSubmitByUserId" resultType="com.winkel.qualityevaluation.entity.task.EvaluateSubmit">
         select evaluatesubmit.submit_id
         from evaluatetask,
@@ -344,6 +349,25 @@
             </when>
         </choose>
         index1.evaluate_index1_id
+    </select>
+
+    <select id="selectComplete" resultMap="index2Map">
+        select count(index2.evaluate_index2_id), index2.evaluate_index2_id
+        from evaluatesubmit as submit,
+             evaluateindex3 as index3,
+             evaluateindex2 as index2
+        where submit.evaluate_task_id = #{taskId}
+          and submit.evaluate_index3_id = index3.evaluate_index3_id
+          and index3.evaluate_index2_id = index2.evaluate_index2_id
+        GROUP BY index2.evaluate_index2_id
+    </select>
+
+    <select id="selectIndex2" resultMap="index2Map">
+        select count(index2.evaluate_index2_id), index2.evaluate_index2_id
+        from evaluateindex3 as index3,
+             evaluateindex2 as index2
+        where index3.evaluate_index2_id = index2.evaluate_index2_id
+        GROUP BY index2.evaluate_index2_id
     </select>
 
 </mapper>

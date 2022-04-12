@@ -616,17 +616,17 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @GetMapping("/auditReport")
-    public ResponseUtil auditReport(@RequestBody List<String> reportFileIds, @RequestParam Integer isAccept) {
-        for (String reportFileId : reportFileIds) {
-            Integer taskId = reportFileService.getOne(new QueryWrapper<EvaluateReportFile>().eq("report_file_id", reportFileId).select("task_id")).getTaskId();
+    @PostMapping("/auditReport")
+    public ResponseUtil auditReport(@RequestBody List<Integer> taskIds, @RequestParam Integer isAccept) {
+        for (Integer taskId : taskIds) {
             boolean update = taskService.update(new UpdateWrapper<EvaluateTask>()
                     .eq("evaluate_task_id", taskId)
                     .set("task_status", isAccept == 1 ? Const.TASK_REPORT_ACCEPTED : Const.TASK_REPORT_REFUSED));
             if (update) {
-                log.info("审核报告成功，reportFileId={}", reportFileId);
+                log.info("审核报告成功，taskId={}", taskId);
+            } else {
+                log.info("审核报告失败，taskId={}", taskId);
             }
-            log.info("审核报告失败，reportFileId={}", reportFileId);
         }
         return new ResponseUtil(200, "审核报告成功");
     }

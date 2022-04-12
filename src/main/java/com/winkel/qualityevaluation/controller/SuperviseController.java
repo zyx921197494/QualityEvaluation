@@ -18,6 +18,7 @@ import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
 import com.winkel.qualityevaluation.vo.ConsumerVo;
+import com.winkel.qualityevaluation.vo.Index2Vo;
 import com.winkel.qualityevaluation.vo.Index3Vo;
 import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.SneakyThrows;
@@ -67,6 +68,23 @@ public class SuperviseController {
     private Producer producer;
 
     /**
+     * desc: 判断督评组长是否是第一次登录(以是否启动评估任务来区分)
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/isFirstLogin")
+    public ResponseUtil isFirstLogin(HttpServletRequest request) {
+        Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
+        EvaluateTask task = taskService.getById(taskId);
+        if (task.getStartTime() != null || !Objects.equals(task.getStatus(), Const.TASK_NOT_START)) {
+            return new ResponseUtil(200, "成功", false);
+        }
+        return new ResponseUtil(200, "成功", true);
+    }
+
+
+    /**
      * desc: 督评组长开启自评(更新task)
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
@@ -95,6 +113,32 @@ public class SuperviseController {
 
 
     /**
+     * desc: 获取各2级指标的完成情况(某指标有一道及以上问题未评估则视为未完成)
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getCompleteIndex")
+    public ResponseUtil getCompleteIndex(HttpServletRequest request) {
+        Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
+        List<Index2Vo> voList = submitService.getComplete(taskId);  // 各指标完成情况
+        List<Index2Vo> index2s = submitService.getIndex2();  // 各指标对应的问题数量
+        System.out.println("voList = " + voList);
+        System.out.println("index2s = " + index2s);
+        ArrayList<Integer> result = new ArrayList<>();
+        for (Index2Vo vo : voList) {
+            if (Objects.equals(vo.getCount(), index2s.get(vo.getIndex2Id() - 1).getCount())) {
+                result.add(vo.getIndex2Id());
+            }
+        }
+        if (result.isEmpty()) {
+            return new ResponseUtil(200, "未完成任何评估指标");
+        }
+        return new ResponseUtil(200, "查找指标完成情况成功", result);
+    }
+
+
+    /**
      * desc: 查看已填写的评估数据
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
@@ -103,24 +147,28 @@ public class SuperviseController {
     @GetMapping("/getSubmittedEvaluation")
     public ResponseUtil getSubmittedEvaluation(HttpServletRequest request) {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
-        List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
-
-        List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
-        for (EvaluateSubmit submit : submits) {
-            EvaluateIndex3 index = index3Service.getOne(new QueryWrapper<EvaluateIndex3>().eq("evaluate_index3_id", submit.getIndex3Id()));
-            index3VoList.add(new Index3Vo()
-                    .setIndex3id(index.getIndex3Id())
-                    .setIndex3Name(index.getIndex3Name())
-                    .setIndex3Content(index.getIndex3Content())
-                    .setType(index.getType() == 1 ? "判断" : index.getType() == 2 ? "单选" : "多选")
-                    .setMemo(index.getMemo())
-                    .setSubmitTime(submit.getSubmitTime())
-                    .setContent(submit.getContent()));
+        List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));  // 已提交数据
+        List<EvaluateIndex3> index3s = index3Service.list();  // 所有题目
+        List<Index3Vo> result = new ArrayList<>(index3s.size());  // 最终返回的VoList
+        int current = 0;
+        for (int i = 0; i < 40; i++) {
+            EvaluateIndex3 index3 = index3s.get(i);
+            Index3Vo vo = new Index3Vo()
+                    .setIndex3id(index3.getIndex3Id())
+                    .setIndex3Name(index3.getIndex3Name())
+                    .setIndex3Content(index3.getIndex3Content())
+                    .setType(String.valueOf(index3.getType()))
+                    .setMemo(index3.getMemo());
+            if (current < submits.size() && Objects.equals(submits.get(current).getIndex3Id(), index3.getIndex3Id())) {  // 已经回答该题
+                vo.setContent(submits.get(current).getContent());
+                ++current;
+            }
+            result.add(vo);
         }
-        if (index3VoList.isEmpty()) {
-            return new ResponseUtil(500, "无记录");
+        if (result.isEmpty()) {
+            return new ResponseUtil(200, "无记录");
         }
-        return new ResponseUtil(200, "查询已填写评估数据成功", index3VoList);
+        return new ResponseUtil(200, "查询已填写评估数据成功", result);
     }
 
 

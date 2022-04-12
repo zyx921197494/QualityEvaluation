@@ -6,6 +6,8 @@ package com.winkel.qualityevaluation.vo;
   @Date 2022-03-25 16:59
   */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @Accessors(chain = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Index3Vo {
 
     private Integer index3id;

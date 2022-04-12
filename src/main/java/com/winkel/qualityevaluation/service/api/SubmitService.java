@@ -3,6 +3,7 @@ package com.winkel.qualityevaluation.service.api;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.vo.CountDTO;
+import com.winkel.qualityevaluation.vo.Index2Vo;
 import com.winkel.qualityevaluation.vo.ScoreDTO;
 import com.winkel.qualityevaluation.vo.ScoreVo;
 import org.apache.ibatis.annotations.Param;
@@ -49,7 +50,8 @@ public interface SubmitService extends IService<EvaluateSubmit> {
 
     Double getCountByLocationCodeAndType(CountDTO CountDTO);
 
+    List<Index2Vo> getComplete(Integer taskId);
 
-
+    List<Index2Vo> getIndex2();
 
 }

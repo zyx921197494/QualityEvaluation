@@ -30,10 +30,10 @@ public class EvaluateIndex3 {
     private Integer index2Id;
 
     @TableField("evaluate_index3_name")
-    private String index3Name;
+    private String index3Name;  // 问题
 
     @TableField("evaluate_index3_content")
-    private String index3Content;  //问题
+    private String index3Content;  //选项
 
     @TableField("evaluate_type")
     private Integer type;  // 1判断(A好B坏 20分) 2单选(0、10、20、30分) 3多选(满分40分) 4文本

@@ -109,7 +109,7 @@ public class ExcelUtil {
             File file = new File(filePath);
             Workbook workbook = getWorkbook(file);
             Sheet sheet = workbook.getSheetAt(0);
-            sheet.createFreezePane( 0, 1, 0, 1 );
+            sheet.createFreezePane( 0, 1, 0, 1 );  // 冻结表头第一行
             int begin = sheet.getPhysicalNumberOfRows();  // 从最后一行开始续写
             // 添加表头
             if (writeTitle) {
