@@ -13,17 +13,11 @@ import java.util.List;
 @Service
 public class Index3ServiceImpl extends ServiceImpl<Index3Dao, EvaluateIndex3> implements Index3Service {
 
-//    @Autowired
-//    private Index3Dao index3Dao;
-//
-//    @Override
-//    public List<EvaluateIndex1> listAllIndex1() {
-//        return index3Dao.selectAllIndex1();
-//    }
-//
-//    @Override
-//    public List<EvaluateIndex2> listAllIndex2() {
-//        return index3Dao.selectAllIndex2();
-//    }
+    @Autowired
+    private Index3Dao index3Dao;
 
+    @Override
+    public List<EvaluateIndex3> listIndex3ByEvaluateId(Integer evaluateId) {
+        return index3Dao.selectAllIndex3ByEvaluateId(evaluateId);
+    }
 }

@@ -10,7 +10,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.winkel.qualityevaluation.dao.IndexDao;
 import com.winkel.qualityevaluation.entity.*;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex3;
 import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
@@ -19,6 +23,9 @@ import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
 import com.winkel.qualityevaluation.vo.*;
+import com.winkel.qualityevaluation.vo.index.EvaluateIndexVo;
+import com.winkel.qualityevaluation.vo.index.Index1Vo;
+import com.winkel.qualityevaluation.vo.index.Index2Vo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +66,15 @@ public class AdminController {
     private SubmitService submitService;
 
     @Autowired
+    private IndexService indexService;
+
+    @Autowired
+    private Index1Service index1Service;
+
+    @Autowired
+    private Index2Service index2Service;
+
+    @Autowired
     private Index3Service index3Service;
 
     @Autowired
@@ -68,12 +84,56 @@ public class AdminController {
     private OssUtil ossUtil;
 
     /**
+     * desc: 启动评估周期页面：查询所有评价体系
+     * params: []
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/listEvaluateIndex")
+    public ResponseUtil listEvaluateIndex() {
+        List<EvaluateIndex> list = indexService.list();
+        return new ResponseUtil(200, "查询评价体系成功", list);
+    }
+
+    /**
+     * desc: 创建一套评价体系
+     * params: [vo]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/newEvaluateIndex")
+    public ResponseUtil newEvaluateIndex(@RequestBody EvaluateIndexVo vo) {
+        EvaluateIndex index = vo.getEvaluateIndex();
+        indexService.save(index);
+
+        List<Index1Vo> index1List = vo.getIndex1List();
+        for (Index1Vo index1Vo : index1List) {
+            EvaluateIndex1 index1 = index1Vo.getEvaluateIndex1();
+            index1Service.save(index1.setEvaluateIndexId(index.getEvaluateId()));
+
+            List<Index2Vo> index2VoList = index1Vo.getIndex2VoList();
+            for (Index2Vo index2Vo : index2VoList) {
+                EvaluateIndex2 index2 = index2Vo.getEvaluateIndex2();
+                index2Service.save(index2.setIndex1Id(index1.getIndex1Id()));
+
+                List<EvaluateIndex3> index3List = index2Vo.getIndex3List();
+                for (EvaluateIndex3 index3 : index3List) {
+                    index3Service.save(index3.setIndex2Id(index2.getIndex2Id()));
+                }
+            }
+        }
+
+        return new ResponseUtil(200, "新增评价体系成功");
+    }
+
+    /**
      * desc: 县级管理员获取当前周期
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
     @RequestMapping("/getCurrentCycle")
+
     public ResponseUtil getCurrentCycle(HttpServletRequest request) {
         String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         return new ResponseUtil(200, "查询当前周期", taskService.getCurrentCycle(locationCode));
@@ -480,7 +540,7 @@ public class AdminController {
      * exception:
      **/
     @GetMapping("/startCycle")
-    public ResponseUtil startCycle(@RequestParam String locationCode) {
+    public ResponseUtil startCycle(@RequestParam String locationCode, @RequestParam Integer evaluateIndexId) {
         // 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
         Integer cycle = taskService.getCurrentCycle(locationCode);
         List<School> schoolList = schoolService.list(new QueryWrapper<School>().likeRight("school_location_code", locationCode.substring(0, 6)));
@@ -503,7 +563,7 @@ public class AdminController {
         for (School school : schoolList) {
             taskList.add(new EvaluateTask()
                     .setSchoolCode(school.getCode())
-                    .setEvaluateId(1)
+                    .setEvaluateId(evaluateIndexId)
                     .setName("自评")
                     .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
                     .setCycle(currentCycle)

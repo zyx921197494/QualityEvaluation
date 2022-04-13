@@ -41,6 +41,8 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**
   global-config:
     banner: false
+  configuration:
+    use-generated-keys: on
 #  configuration:
 #    call-setters-on-nulls: false
 

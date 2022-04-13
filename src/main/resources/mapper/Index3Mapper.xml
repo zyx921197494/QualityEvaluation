@@ -13,13 +13,21 @@
         <result column="evaluate_memo" property="memo"/>
     </resultMap>
 
-<!--    <select id="selectAllIndex1" resultType="com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1">-->
-<!--        select evaluate_index1_id, evaluate_index1_name, evaluate_index1_content from evaluateindex1-->
-<!--    </select>-->
-
-<!--    <select id="selectAllIndex2" resultType="com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2">-->
-<!--        select evaluate_index2_id, evaluate_index2_name, evaluate_index1_id, evaluate_index2_content from evaluateindex2-->
-<!--    </select>-->
-
+    <select id="selectAllIndex3ByEvaluateId" resultMap="BaseResultMap">
+        select index3.evaluate_index3_id,
+               index3.evaluate_index2_id,
+               index3.evaluate_index3_name,
+               index3.evaluate_index3_content,
+               index3.evaluate_type,
+               index3.evaluate_memo
+        from tevaluateindex as evaluate,
+             evaluateindex1 as index1,
+             evaluateindex2 as index2,
+             evaluateindex3 as index3
+        where evaluate.evaluate_id = index1.evaluate_id
+          and index1.evaluate_index1_id = index2.evaluate_index1_id
+          and index2.evaluate_index2_id = index3.evaluate_index2_id
+          and evaluate.evaluate_id = #{evaluateId}
+    </select>
 
 </mapper>

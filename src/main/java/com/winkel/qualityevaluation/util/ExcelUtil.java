@@ -9,13 +9,10 @@ package com.winkel.qualityevaluation.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.exception.ExcelException;
 import com.winkel.qualityevaluation.vo.Index3Vo;
-import com.winkel.qualityevaluation.vo.SubmitVo;
 import lombok.SneakyThrows;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;

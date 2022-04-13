@@ -52,6 +52,6 @@ public interface SubmitService extends IService<EvaluateSubmit> {
 
     List<Index2Vo> getComplete(Integer taskId);
 
-    List<Index2Vo> getIndex2();
+    List<Index2Vo> getIndex2ByEvaluateId(Integer evaluateId);
 
 }

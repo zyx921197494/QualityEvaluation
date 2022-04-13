@@ -106,8 +106,7 @@ public class SubmitServiceImpl extends ServiceImpl<SubmitDao, EvaluateSubmit> im
     }
 
     @Override
-    public List<Index2Vo> getIndex2() {
-        return submitDao.selectIndex2();
+    public List<Index2Vo> getIndex2ByEvaluateId(Integer evaluateId) {
+        return submitDao.listIndex2ByEvaluateId(evaluateId);
     }
-
 }

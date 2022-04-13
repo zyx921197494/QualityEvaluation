@@ -35,7 +35,7 @@ public interface SubmitDao extends BaseMapper<EvaluateSubmit> {
 
     //以下方法均为城市幼儿园和农村幼儿园的总分均值和各一级指标均值
 
-    Double selectCountByLocationCodeAndType(@Param("countDTO")CountDTO countDTO);
+    Double selectCountByLocationCodeAndType(@Param("countDTO") CountDTO countDTO);
 
     //是否城市
     List<ScoreVo> selectScoreByIsCity(@Param("scoreDTO") ScoreDTO scoreDTO);
@@ -59,8 +59,6 @@ public interface SubmitDao extends BaseMapper<EvaluateSubmit> {
 
     List<Index2Vo> selectComplete(@Param("taskId") Integer taskId);
 
-    List<Index2Vo> selectIndex2();
-
-
+    List<Index2Vo> listIndex2ByEvaluateId(@Param("evaluateId") Integer evaluateId);
 
 }

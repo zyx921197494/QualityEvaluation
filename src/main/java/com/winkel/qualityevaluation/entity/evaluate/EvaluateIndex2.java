@@ -6,6 +6,7 @@ package com.winkel.qualityevaluation.entity.evaluate;
   @Date 2022-03-16 11:06
   */
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -23,7 +24,7 @@ import lombok.experimental.Accessors;
 @TableName("evaluateindex2")
 public class EvaluateIndex2 {
 
-    @TableId("evaluate_index2_id")
+    @TableId(value = "evaluate_index2_id",type = IdType.AUTO)
     private Integer index2Id;
 
     @TableField("evaluate_index1_id")

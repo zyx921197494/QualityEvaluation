@@ -122,9 +122,7 @@ public class SuperviseController {
     public ResponseUtil getCompleteIndex(HttpServletRequest request) {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
         List<Index2Vo> voList = submitService.getComplete(taskId);  // 各指标完成情况
-        List<Index2Vo> index2s = submitService.getIndex2();  // 各指标对应的问题数量
-        System.out.println("voList = " + voList);
-        System.out.println("index2s = " + index2s);
+        List<Index2Vo> index2s = submitService.getIndex2ByEvaluateId(taskService.getById(taskId).getEvaluateId());  // 各指标对应的问题数量
         ArrayList<Integer> result = new ArrayList<>();
         for (Index2Vo vo : voList) {
             if (Objects.equals(vo.getCount(), index2s.get(vo.getIndex2Id() - 1).getCount())) {
@@ -139,7 +137,7 @@ public class SuperviseController {
 
 
     /**
-     * desc: 查看已填写的评估数据
+     * desc: 查看已填写的评估数据。其余未填写则返回三级指标
      * params: [request]
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
@@ -148,7 +146,7 @@ public class SuperviseController {
     public ResponseUtil getSubmittedEvaluation(HttpServletRequest request) {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
         List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));  // 已提交数据
-        List<EvaluateIndex3> index3s = index3Service.list();  // 所有题目
+        List<EvaluateIndex3> index3s = index3Service.listIndex3ByEvaluateId(taskService.getById(taskId).getEvaluateId());  // 所有题目
         List<Index3Vo> result = new ArrayList<>(index3s.size());  // 最终返回的VoList
         int current = 0;
         for (int i = 0; i < 40; i++) {
@@ -187,17 +185,24 @@ public class SuperviseController {
         List<EvaluateSubmit> list = new ArrayList<>(submitVos.size());
 
         for (SubmitVo submitVo : submitVos) {
+            EvaluateIndex3 index3 = index3Service.getById(submitVo.getIndex3Id());
+            String[] scores = index3.getIndex3Score().split("\\|");
+            Integer type = index3.getType();
             int score = 0;
-            int type = submitVo.getType();
             String content = submitVo.getContent();
-            if (type == 1 && "A".equalsIgnoreCase(content)) {
-                score = 20;
-            } else if (type == 2) {
-                if ("B".equalsIgnoreCase(content)) score = 10;
-                else if ("C".equalsIgnoreCase(content)) score = 20;
-                else if ("D".equalsIgnoreCase(content)) score = 30;
-            } else if (type == 3) {
-                score = submitVo.getContent().length() * 10;
+            if (type == 1) {  // 判断
+                if ("A".equalsIgnoreCase(content)) score = Integer.parseInt(scores[0]);
+                else score = Integer.parseInt(scores[1]);
+            } else if (type == 2) {  // 单选
+                if ("A".equalsIgnoreCase(content)) score = Integer.parseInt(scores[0]);
+                else if ("B".equalsIgnoreCase(content)) score = Integer.parseInt(scores[1]);
+                else if ("C".equalsIgnoreCase(content)) score = Integer.parseInt(scores[2]);
+                else score = Integer.parseInt(scores[3]);
+            } else if (type == 3) {  // 多选
+                if (content.contains("A")) score += Integer.parseInt(scores[0]);
+                if (content.contains("B")) score += Integer.parseInt(scores[1]);
+                if (content.contains("C")) score += Integer.parseInt(scores[2]);
+                if (content.contains("D")) score += Integer.parseInt(scores[3]);
             }
 
             if (!submitService.update(new UpdateWrapper<EvaluateSubmit>()

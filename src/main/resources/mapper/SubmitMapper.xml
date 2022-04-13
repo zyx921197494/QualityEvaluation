@@ -362,11 +362,16 @@
         GROUP BY index2.evaluate_index2_id
     </select>
 
-    <select id="selectIndex2" resultMap="index2Map">
+    <select id="listIndex2ByEvaluateId" resultMap="index2Map">
         select count(index2.evaluate_index2_id), index2.evaluate_index2_id
         from evaluateindex3 as index3,
-             evaluateindex2 as index2
+             evaluateindex2 as index2,
+             evaluateindex1 as index1,
+             tevaluateindex as evaluate
         where index3.evaluate_index2_id = index2.evaluate_index2_id
+        and index2.evaluate_index1_id = index1.evaluate_index1_id
+        and index1.evaluate_id = evaluate.evaluate_id
+        and evaluate.evaluate_id = #{evaluateId}
         GROUP BY index2.evaluate_index2_id
     </select>
 
