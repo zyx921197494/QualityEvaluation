@@ -31,7 +31,7 @@
 
     <select id="selectAuthorities" parameterType="java.lang.String"
             resultType="com.winkel.qualityevaluation.entity.Authority">
-        SELECT authority.url, authority.authority
+        SELECT authority.id, authority.url, authority.authority
         FROM user,
              authority,
              user_authority

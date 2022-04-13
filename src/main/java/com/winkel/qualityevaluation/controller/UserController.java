@@ -13,6 +13,7 @@ import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.exception.AccountException;
 import com.winkel.qualityevaluation.exception.AuthorityNotFoundException;
 import com.winkel.qualityevaluation.service.impl.UserServiceImpl;
+import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.JWTUtil;
 import com.winkel.qualityevaluation.util.ResponseUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -55,12 +56,14 @@ public class UserController {
 
             //数据库查找当前用户权限
             List<Authority> authorities = userService.getAuthorities(username);
+            System.out.println("authorities = " + authorities);
             if (authorities.isEmpty()) {
                 throw new AuthorityNotFoundException("查找权限失败");
             }
             claims.put("authorities", authorities);
 
             Map<String, Object> tokenMap = JWTUtil.createJWT(claims);
+            tokenMap.put("token_type", getTokenType(authorities.get(0)));
             //TODO 存入Redis
             System.out.println("登录成功");
 
@@ -73,4 +76,16 @@ public class UserController {
         }
         return new ResponseUtil(500, "用户名或密码错误");
     }
+
+    private String getTokenType(Authority authoritie) {
+        Integer id = authoritie.getId();
+        if (id > 0 && id < 5) {
+            return Const.TOKEN_TYPE_ADMIN;
+        } else if (id > 4 && id < 10) {
+            return Const.TOKEN_TYPE_USER;
+        } else {
+            return Const.TOKEN_TYPE_LEADER;
+        }
+    }
+
 }

@@ -64,7 +64,6 @@ public class JWTUtil {
 
         Map<String, Object> result = new HashMap<>();
         result.put("JWT", jwt);
-        result.put("token_type", TokenType.USER);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:ss:mm");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         result.put("expiration", formatter.format(expDate));
@@ -143,13 +142,6 @@ public class JWTUtil {
             return authorities.isEmpty() ? null : authorities;
         }
         return null;
-    }
-
-    class TokenType {
-        final static String USER = "user";
-        final static String LOGIN = "login";
-        final static String REGISTRY = "register";
-        final static String SMS = "sms";
     }
 
 }

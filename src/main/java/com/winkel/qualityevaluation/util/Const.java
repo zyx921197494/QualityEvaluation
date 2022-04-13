@@ -58,4 +58,10 @@ public class Const {
     public final static Integer REDIS_CODE_TIMEOUT = 2;
     public final static Integer REDIS_CODE_ERROR = 3;
 
+    public final static String TOKEN_TYPE_USER = "user";
+    public final static String TOKEN_TYPE_LEADER = "leader";
+    public final static String TOKEN_TYPE_ADMIN = "admin";
+    public final static String TOKEN_TYPE_MQ = "mq";
+    public final static String TOKEN_TYPE_SMS = "sms";
+
 }
