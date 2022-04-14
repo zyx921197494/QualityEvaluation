@@ -18,9 +18,11 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.expression.WebExpressionVoter;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.web.cors.CorsUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,15 +43,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private MyAuthenticationSuccessHandler myAuthenticationSuccessHandler;
 
+    @Autowired
+    private MyCorsFilter myCorsFilter;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
         AuthenticationFilter authenticationFilter = new AuthenticationFilter(this.authenticationManagerBean(), myAuthenticationSuccessHandler);
 
         http
+
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
+                .addFilterBefore(myCorsFilter, ChannelProcessingFilter.class)
                 .addFilterAfter((new JwtSecurityContextPersistenceFilter(new MyAuthenticationFailureHandler())), SecurityContextPersistenceFilter.class)
                 .addFilterAfter(authenticationFilter, CsrfFilter.class)
                 .exceptionHandling()
@@ -60,8 +67,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .logout().logoutSuccessHandler(new MyLogoutSuccessHandler())
                 .and().authorizeRequests()
-                .antMatchers("/auth/login").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                .antMatchers("/auth/login").permitAll()
                 .antMatchers("/admin/**").hasAnyRole("ADMIN_COUNTY", "ADMIN_CITY", "ADMIN_PROVINCE", "ADMIN_EXPERT")
                 .antMatchers("/evaluate/self/**").hasAnyRole("EVALUATE_SELF", "EVALUATE_LEADER_SELF")
                 .antMatchers("/evaluate/supervise/**").hasAnyRole("EVALUATE_SUPERVISOR", "EVALUATE_LEADER_SUPERVISOR")

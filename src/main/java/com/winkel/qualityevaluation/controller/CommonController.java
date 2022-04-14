@@ -16,6 +16,7 @@ import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.JWTUtil;
 import com.winkel.qualityevaluation.util.OssUtil;
 import com.winkel.qualityevaluation.util.ResponseUtil;
+import com.winkel.qualityevaluation.vo.LocationVo;
 import com.winkel.qualityevaluation.vo.SchoolVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -79,6 +81,36 @@ public class CommonController {
     @GetMapping("/region/{locationCode}")
     public ResponseUtil region(@PathVariable String locationCode) {
         return new ResponseUtil(200, "查询下级行政区成功", locationService.list(new QueryWrapper<Location>().eq("p_code", locationCode).select("code", "name")));
+    }
+
+    /**
+     * desc: 获取三级行政区
+     * params: [locationCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/location")
+    public ResponseUtil region() {
+        List<LocationVo> result = new ArrayList<>();
+
+        List<Location> provinces = locationService.list(new QueryWrapper<Location>().eq("type", 1).select("code", "name"));  // 所有省
+
+        for (Location province : provinces) {
+            List<Location> cities = locationService.list(new QueryWrapper<Location>().eq("type",2).eq("p_code", province.getCode()).select("code", "name"));  // 省下所有市
+            ArrayList<LocationVo> citiesVo = new ArrayList<>();
+            for (Location city : cities) {
+                List<Location> counties = locationService.list(new QueryWrapper<Location>().eq("type",3).eq("p_code", city.getCode()).select("code", "name"));// 市下所有县
+                ArrayList<LocationVo> countiesVo = new ArrayList<>();
+                for (Location county : counties) {
+                    countiesVo.add(new LocationVo().setLabel(county.getName()).setValue(county.getCode()));
+//                    log.info("当前：{} {} {}", province, city, county);
+                }
+                citiesVo.add(new LocationVo().setLabel(city.getName()).setValue(city.getCode()).setList(countiesVo));
+            }
+            result.add(new LocationVo().setLabel(province.getName()).setValue(province.getCode()).setList(citiesVo));
+        }
+
+        return new ResponseUtil(200, "查询行政区成功", result);
     }
 
 

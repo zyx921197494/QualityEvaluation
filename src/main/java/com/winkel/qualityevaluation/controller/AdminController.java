@@ -204,12 +204,12 @@ public class AdminController {
 
     /**
      * desc: 导出自评、督评账号
-     * params: [schools, userType] schools：学校的标识码列表userType：自评(5、10)、督评(6、11)
+     * params: [schools, userType] schools：学校的标识码列表 userType：自评(5、10)、督评(6、11)
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
     @SneakyThrows
-    @GetMapping("/exportUser")
+    @PostMapping("/exportUser")
     public ResponseUtil exportUser(@RequestBody List<String> schoolCodes, Integer authorityId) {
         for (String schoolCode : schoolCodes) {
             String schoolName = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode)).getName();
@@ -247,8 +247,8 @@ public class AdminController {
      * return: com.baomidou.mybatisplus.core.metadata.IPage<com.winkel.qualityevaluation.entity.School>
      * exception:
      **/
-    @PostMapping("/schools")
-    public IPage<School> schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer current, @RequestParam("pageSize") Integer pageSize) {
+    @GetMapping("/schools")
+    public ResponseUtil schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer current, @RequestParam("pageSize") Integer pageSize) {
         IPage<School> page = new Page<>(current, pageSize);
 
         Map<String, Object> queryMap = new HashMap<>(2);
@@ -262,10 +262,19 @@ public class AdminController {
         if (StringUtils.isNotBlank(locationCode)) wrapper.like("school_location_code", locationCode);
         if (isCity != null) wrapper.likeRight("school_location_type_code", isCity == 1 ? "1" : "2");
 
+        IPage<School> list = null;
         if (isPublic != null) {
-            return schoolService.page(page, isPublic == 1 ? wrapper.ne("school_host_code", "999") : wrapper.eq("school_host_code", "999"));
+            list = schoolService.page(page, isPublic == 1 ? wrapper.ne("school_host_code", "999") : wrapper.eq("school_host_code", "999"));
         }
-        return schoolService.page(page, wrapper);
+        list = schoolService.page(page, wrapper);
+        if (list == null || list.getTotal() == 0) {
+            return new ResponseUtil(500, "数据为空");
+        }
+        for (School school : list.getRecords()) {
+            String county = locationService.getOne(new QueryWrapper<Location>().eq("code", school.getLocationCode())).getName();
+            school.setLocationCode(county);
+        }
+        return new ResponseUtil(200, "查找成功", list);
     }
 
 

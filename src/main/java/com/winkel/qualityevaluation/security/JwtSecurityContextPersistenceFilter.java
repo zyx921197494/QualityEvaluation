@@ -74,8 +74,10 @@ public class JwtSecurityContextPersistenceFilter extends GenericFilterBean {
         request.setAttribute(FILTER_APPLIED, Boolean.TRUE);
 
         try {
+            System.out.println("JwtSecurityContextPersistenceFilter开始");
             String authorization = request.getHeader(TOKEN_HEADER);
             if (StringUtils.isBlank(authorization) || !StringUtils.startsWithIgnoreCase(authorization, STARTS_WITH) || "null".equals(authorization)) {
+                System.out.println("token为空");
                 throw new NullPointerException();
             }
             String token = authorization.substring(STARTS_WITH.length());
