@@ -25,5 +25,6 @@ public class SchoolTaskVo {
     private LocalDate startDate;
     private String taskStatus;
     private LocalDateTime lastSubmit;
+    private LocalDateTime FirstSubmit;
 
 }

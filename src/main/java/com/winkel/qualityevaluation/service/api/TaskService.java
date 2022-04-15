@@ -42,6 +42,8 @@ public interface TaskService extends IService<EvaluateTask> {
 
     LocalDateTime getLastSubmitTimeByTaskId(Integer taskId);
 
+    LocalDateTime getFirstSubmitTimeByTaskId(Integer taskId);
+
     List<String> getFileNameBySchoolcodeAndType(List<String> schoolCodes, Integer type);
 
     Integer getTaskIdByBySchoolcodeAndType(String schoolCode, Integer type);

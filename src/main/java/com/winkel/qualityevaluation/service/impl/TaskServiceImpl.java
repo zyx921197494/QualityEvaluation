@@ -109,6 +109,11 @@ public class TaskServiceImpl extends ServiceImpl<TaskDao, EvaluateTask> implemen
     }
 
     @Override
+    public LocalDateTime getFirstSubmitTimeByTaskId(Integer taskId) {
+        return taskDao.selectFirstSubmitTimeByTaskId(taskId);
+    }
+
+    @Override
     public List<String> getFileNameBySchoolcodeAndType(List<String> schoolCodes, Integer type) {
         return taskDao.selectFileNameBySchoolcodeAndType(schoolCodes, type);
     }

@@ -45,9 +45,9 @@ public class CommonController {
     private OssUtil ossUtil;
 
     /**
-     * desc:
-     * params:
-     * return:
+     * desc: 根据学校标识码查看学校信息
+     * params: [schoolCode]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
     @GetMapping("/schoolInfo")
@@ -96,10 +96,10 @@ public class CommonController {
         List<Location> provinces = locationService.list(new QueryWrapper<Location>().eq("type", 1).select("code", "name"));  // 所有省
 
         for (Location province : provinces) {
-            List<Location> cities = locationService.list(new QueryWrapper<Location>().eq("type",2).eq("p_code", province.getCode()).select("code", "name"));  // 省下所有市
+            List<Location> cities = locationService.list(new QueryWrapper<Location>().eq("type", 2).eq("p_code", province.getCode()).select("code", "name"));  // 省下所有市
             ArrayList<LocationVo> citiesVo = new ArrayList<>();
             for (Location city : cities) {
-                List<Location> counties = locationService.list(new QueryWrapper<Location>().eq("type",3).eq("p_code", city.getCode()).select("code", "name"));// 市下所有县
+                List<Location> counties = locationService.list(new QueryWrapper<Location>().eq("type", 3).eq("p_code", city.getCode()).select("code", "name"));// 市下所有县
                 ArrayList<LocationVo> countiesVo = new ArrayList<>();
                 for (Location county : counties) {
                     countiesVo.add(new LocationVo().setLabel(county.getName()).setValue(county.getCode()));

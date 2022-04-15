@@ -286,16 +286,18 @@ public class AdminController {
      **/
     @PostMapping("/schoolTask")
     public ResponseUtil schoolTask(@RequestBody SchoolTaskDTO schoolTaskDTO) {
+        System.out.println("schoolTaskDTO = " + schoolTaskDTO);
         if (schoolTaskDTO.getCurrentPage() == null || schoolTaskDTO.getPageSize() == null) {
             return new ResponseUtil(500, "请求中未包含分页参数");
         }
         schoolTaskDTO.setCurrentPage(schoolTaskDTO.getCurrentPage() - 1);
         List<SchoolTaskVo> schoolTaskVos = taskService.listAllBySort(schoolTaskDTO);
         if (schoolTaskVos.isEmpty()) {
-            return new ResponseUtil(200, "未查询到此类型数据");
+            return new ResponseUtil(500, "未查询到此类型数据");
         }
         for (SchoolTaskVo vo : schoolTaskVos) {
             vo.setLastSubmit(taskService.getLastSubmitTimeByTaskId(vo.getTaskId()));
+            vo.setFirstSubmit(taskService.getFirstSubmitTimeByTaskId(vo.getTaskId()));
         }
         return new ResponseUtil(200, "查询成功", schoolTaskVos);
     }
@@ -340,12 +342,11 @@ public class AdminController {
      **/
     @SneakyThrows
     @PostMapping("/exportEvaluationData")
-    public ResponseUtil exportEvaluationData(@RequestBody List<SimpleSchoolVo> schools, @RequestParam Integer taskType) {
+    public ResponseUtil exportEvaluationData(@RequestBody List<String> schools, @RequestParam Integer taskType) {
         ArrayList<List<Index3Vo>> data = new ArrayList<>();
         ArrayList<SimpleSchoolVo> schoolList = new ArrayList<>();
-        for (SimpleSchoolVo school : schools) {
-            log.info("当前学校{}", school);
-            Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(school.getCode(), taskType);
+        for (String code : schools) {
+            Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(code, taskType);
             List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", taskId));
 
             List<Index3Vo> index3VoList = new ArrayList<>(submits.size());
@@ -362,7 +363,7 @@ public class AdminController {
             }
             if (!index3VoList.isEmpty()) {  // 有的学校评估未启动没有数据，但仍在请求参数中。新开list避免Excel写入空数据
                 data.add(index3VoList);
-                schoolList.add(new SimpleSchoolVo().setCode(school.getCode()).setName(school.getName()));
+                schoolList.add(new SimpleSchoolVo().setCode(code).setName(schoolService.getOne(new QueryWrapper<School>().eq("school_code", code)).getName()));
                 log.info("list大小{}   {}", data.size(), schoolList.size());
             }
         }
@@ -399,6 +400,9 @@ public class AdminController {
     @PostMapping("/downloadReport")
     public ResponseUtil downloadReport(@RequestBody List<String> schoolCodes, @RequestParam Integer type) {
         List<String> filenames = taskService.getFileNameBySchoolcodeAndType(schoolCodes, type);
+        if (filenames.isEmpty()) {
+            return new ResponseUtil(500, "当前无报告可下载");
+        }
         String path = "C:\\Users\\Public\\Downloads\\报告下载\\";
         File file = new File(path);
         file.mkdir();
@@ -413,9 +417,9 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    // todo 废弃
     @PostMapping("/updateSchool")
     public ResponseUtil updateSchool(@RequestBody School school) {
+        System.out.println("school = " + school);
         if (StringUtils.isBlank(school.getCode())) {
             return new ResponseUtil(500, "幼儿园编号不能为空");
         }
@@ -431,6 +435,7 @@ public class AdminController {
         if (school.getIsRegister() != null) wrapper.set("is_register", school.getIsRegister());
         if (school.getIsGenerallyBeneficial() != null)
             wrapper.set("is_generally_beneficial", school.getIsGenerallyBeneficial());
+        if (school.getIsCentral() != null) wrapper.set("is_central", school.getIsCentral());
 
         if (schoolService.update(wrapper)) {
             return new ResponseUtil(200, "修改幼儿园信息成功");
@@ -470,9 +475,16 @@ public class AdminController {
      * return: boolean
      * exception:
      **/
-    @GetMapping("/changeSchoolLocation")
-    public boolean changeSchoolLocation(@RequestParam String schoolCode, @RequestParam String locationCode) {
-        return schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
+    @PostMapping("/changeSchoolLocation")
+    public ResponseUtil changeSchoolLocation(@RequestBody List<String> schoolCodes, @RequestParam String locationCode) {
+        boolean success = true;
+        for (String schoolCode : schoolCodes) {
+            success = schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
+            if (!success) {
+                return new ResponseUtil(500, "修改归属地失败");
+            }
+        }
+        return new ResponseUtil(200, "修改归属地成功");
     }
 
 
@@ -614,8 +626,7 @@ public class AdminController {
      * @exception:
      **/
     @PostMapping("/resetEvaluation")
-    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer
-            type) {
+    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer type) {
         for (String schoolCode : schoolCodeList) {
             School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
             Integer cycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
@@ -686,8 +697,17 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/auditReport")
-    public ResponseUtil auditReport(@RequestBody List<Integer> taskIds, @RequestParam Integer isAccept) {
-        for (Integer taskId : taskIds) {
+    public ResponseUtil auditReport(@RequestBody List<String> schoolCodes, @RequestParam Integer type, @RequestParam Integer isAccept) {
+        for (String schoolCode : schoolCodes) {
+            Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(schoolCode, type);
+            if (taskId == null) {
+                return new ResponseUtil(500, "标识码 " + schoolCode + " 学校暂未上传报告，请核对后审核");
+            }
+            EvaluateTask task = taskService.getById(taskId);
+            if (task.getStatus() < Const.TASK_REPORT_SUBMITTED || Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED)) {
+                return new ResponseUtil(500, "报告已经审核，不能重复审核");
+            }
+
             boolean update = taskService.update(new UpdateWrapper<EvaluateTask>()
                     .eq("evaluate_task_id", taskId)
                     .set("task_status", isAccept == 1 ? Const.TASK_REPORT_ACCEPTED : Const.TASK_REPORT_REFUSED));
@@ -695,6 +715,7 @@ public class AdminController {
                 log.info("审核报告成功，taskId={}", taskId);
             } else {
                 log.info("审核报告失败，taskId={}", taskId);
+                return new ResponseUtil(500, "审核报告失败");
             }
         }
         return new ResponseUtil(200, "审核报告成功");

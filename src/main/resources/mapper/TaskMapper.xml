@@ -312,6 +312,12 @@
         where submit.evaluate_task_id = #{taskId}
     </select>
 
+    <select id="selectFirstSubmitTimeByTaskId" resultType="java.time.LocalDateTime">
+        select min(submit.submit_time)
+        from evaluatesubmit as submit
+        where submit.evaluate_task_id = #{taskId}
+    </select>
+
     <select id="selectFileNameBySchoolcodeAndType" resultType="java.lang.String">
         select file.report_file_name
         from evaluatereportfiles as file,

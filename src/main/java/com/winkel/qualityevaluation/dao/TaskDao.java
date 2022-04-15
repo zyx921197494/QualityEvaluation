@@ -45,6 +45,8 @@ public interface TaskDao extends BaseMapper<EvaluateTask> {
 
     LocalDateTime selectLastSubmitTimeByTaskId(@Param("taskId") Integer taskId);
 
+    LocalDateTime selectFirstSubmitTimeByTaskId(@Param("taskId") Integer taskId);
+
     List<String> selectFileNameBySchoolcodeAndType(@Param("schoolCodes") List<String> schoolCodes, @Param("type") Integer type);
 
     Integer getTaskIdByBySchoolcodeAndType(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
