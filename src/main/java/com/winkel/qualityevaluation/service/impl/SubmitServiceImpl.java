@@ -4,11 +4,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.winkel.qualityevaluation.dao.SubmitDao;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.service.api.SubmitService;
-import com.winkel.qualityevaluation.vo.CountDTO;
-import com.winkel.qualityevaluation.vo.Index2Vo;
-import com.winkel.qualityevaluation.vo.ScoreDTO;
-import com.winkel.qualityevaluation.vo.ScoreVo;
-import org.apache.poi.ss.formula.functions.Count;
+import com.winkel.qualityevaluation.pojo.dto.CountDTO;
+import com.winkel.qualityevaluation.pojo.vo.Index2Vo;
+import com.winkel.qualityevaluation.pojo.dto.ScoreDTO;
+import com.winkel.qualityevaluation.pojo.vo.ScoreVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

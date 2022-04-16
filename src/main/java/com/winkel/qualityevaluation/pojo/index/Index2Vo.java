@@ -1,4 +1,4 @@
-package com.winkel.qualityevaluation.vo.index;
+package com.winkel.qualityevaluation.pojo.index;
 /*
   @ClassName Index2Vo
   @Description

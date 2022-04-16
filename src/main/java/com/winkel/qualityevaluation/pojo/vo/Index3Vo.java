@@ -1,4 +1,4 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.vo;
 /*
   @ClassName Index3Vo
   @Description
@@ -6,7 +6,6 @@ package com.winkel.qualityevaluation.vo;
   @Date 2022-03-25 16:59
   */
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.NoArgsConstructor;

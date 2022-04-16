@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.winkel.qualityevaluation.dao.TaskDao;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.exception.TaskException;
+import com.winkel.qualityevaluation.pojo.dto.CycleDTO;
+import com.winkel.qualityevaluation.pojo.vo.CycleVo;
 import com.winkel.qualityevaluation.service.api.TaskService;
 import com.winkel.qualityevaluation.util.Const;
-import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
-import com.winkel.qualityevaluation.vo.SchoolTaskVo;
+import com.winkel.qualityevaluation.pojo.dto.SchoolTaskDTO;
+import com.winkel.qualityevaluation.pojo.vo.SchoolTaskVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -121,6 +123,11 @@ public class TaskServiceImpl extends ServiceImpl<TaskDao, EvaluateTask> implemen
     @Override
     public Integer getTaskIdByBySchoolcodeAndType(String schoolCode, Integer type) {
         return taskDao.getTaskIdByBySchoolcodeAndType(schoolCode, type);
+    }
+
+    @Override
+    public List<CycleVo> getCycleByLocationAndRegionType(CycleDTO cycleDTO) {
+        return taskDao.listCycleByLocationAndRegionType(cycleDTO);
     }
 
 }

@@ -12,7 +12,7 @@
         <result column="score" property="score"/>
     </resultMap>
 
-    <resultMap id="scoreMap" type="com.winkel.qualityevaluation.vo.ScoreVo">
+    <resultMap id="scoreMap" type="com.winkel.qualityevaluation.pojo.vo.ScoreVo">
         <result column="school_code" property="schoolCode"/>
         <result column="school_name" property="schoolName"/>
         <result column="sum(score)" property="score"/>
@@ -24,7 +24,7 @@
         <result column="is_register" property="isRegister"/>
     </resultMap>
 
-    <resultMap id="index2Map" type="com.winkel.qualityevaluation.vo.Index2Vo">
+    <resultMap id="index2Map" type="com.winkel.qualityevaluation.pojo.vo.Index2Vo">
         <result column="count(index2.evaluate_index2_id)" property="count"/>
         <result column="evaluate_index2_id" property="index2Id"/>
     </resultMap>
@@ -219,7 +219,7 @@
     </select>
 
     <!--是否城市-->
-    <select id="selectScoreByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
+    <select id="selectScoreByIsCity" parameterType="com.winkel.qualityevaluation.pojo.dto.ScoreDTO" resultMap="scoreMap">
         SELECT
         school.school_location_type_code,
         <choose>
@@ -285,7 +285,7 @@
 
     </select>
 
-    <select id="selectIndex1ByIsCity" parameterType="com.winkel.qualityevaluation.vo.ScoreDTO" resultMap="scoreMap">
+    <select id="selectIndex1ByIsCity" parameterType="com.winkel.qualityevaluation.pojo.dto.ScoreDTO" resultMap="scoreMap">
         SELECT
         school.school_location_type_code,
         index1.evaluate_index1_name,

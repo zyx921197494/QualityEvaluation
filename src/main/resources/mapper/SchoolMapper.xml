@@ -19,7 +19,7 @@
         <result column="is_locked" property="isLocked"/>
     </resultMap>
 
-    <resultMap id="SchoolVoMap" type="com.winkel.qualityevaluation.vo.SchoolVo">
+    <resultMap id="SchoolVoMap" type="com.winkel.qualityevaluation.pojo.vo.SchoolVo">
         <result column="school_code" property="code" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="school_name" property="name" javaType="java.lang.String" jdbcType="VARCHAR"/>
         <result column="school_location" property="location" javaType="java.lang.String" jdbcType="VARCHAR"/>

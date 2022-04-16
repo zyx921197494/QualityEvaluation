@@ -10,7 +10,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.winkel.qualityevaluation.dao.IndexDao;
 import com.winkel.qualityevaluation.entity.*;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
@@ -20,12 +19,14 @@ import com.winkel.qualityevaluation.entity.task.EvaluateReportFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
+import com.winkel.qualityevaluation.pojo.dto.CycleDTO;
+import com.winkel.qualityevaluation.pojo.dto.SchoolTaskDTO;
+import com.winkel.qualityevaluation.pojo.vo.*;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
-import com.winkel.qualityevaluation.vo.*;
-import com.winkel.qualityevaluation.vo.index.EvaluateIndexVo;
-import com.winkel.qualityevaluation.vo.index.Index1Vo;
-import com.winkel.qualityevaluation.vo.index.Index2Vo;
+import com.winkel.qualityevaluation.pojo.index.EvaluateIndexVo;
+import com.winkel.qualityevaluation.pojo.index.Index1Vo;
+import com.winkel.qualityevaluation.pojo.index.Index2Vo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,15 @@ public class AdminController {
     @Autowired
     private OssUtil ossUtil;
 
+    @GetMapping("/getIndex")
+    public ResponseUtil getIndex() {
+        List<EvaluateIndex> list = indexService.list();
+        if (list.isEmpty()) {
+            return new ResponseUtil(500, "评价体系为空");
+        }
+        return new ResponseUtil(200, "查找评价体系", list);
+    }
+
     /**
      * desc: 启动评估周期页面：查询所有评价体系
      * params: []
@@ -92,6 +102,9 @@ public class AdminController {
     @GetMapping("/listEvaluateIndex")
     public ResponseUtil listEvaluateIndex() {
         List<EvaluateIndex> list = indexService.list();
+        if (list.isEmpty()) {
+            return new ResponseUtil(200, "评价体系为空");
+        }
         return new ResponseUtil(200, "查询评价体系成功", list);
     }
 
@@ -262,11 +275,12 @@ public class AdminController {
         if (StringUtils.isNotBlank(locationCode)) wrapper.like("school_location_code", locationCode);
         if (isCity != null) wrapper.likeRight("school_location_type_code", isCity == 1 ? "1" : "2");
 
-        IPage<School> list = null;
+        IPage<School> list;
         if (isPublic != null) {
             list = schoolService.page(page, isPublic == 1 ? wrapper.ne("school_host_code", "999") : wrapper.eq("school_host_code", "999"));
+        } else {
+            list = schoolService.page(page, wrapper);
         }
-        list = schoolService.page(page, wrapper);
         if (list == null || list.getTotal() == 0) {
             return new ResponseUtil(500, "数据为空");
         }
@@ -477,7 +491,7 @@ public class AdminController {
      **/
     @PostMapping("/changeSchoolLocation")
     public ResponseUtil changeSchoolLocation(@RequestBody List<String> schoolCodes, @RequestParam String locationCode) {
-        boolean success = true;
+        boolean success;
         for (String schoolCode : schoolCodes) {
             success = schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
             if (!success) {
@@ -494,14 +508,15 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @GetMapping("/changeAdminPassword")
-    public ResponseUtil changePassword(HttpServletRequest request, @RequestParam("newPwd") String newPwd) {
+    @PostMapping("/changeAdminPassword")
+    public ResponseUtil changePassword(HttpServletRequest request, @RequestBody List<String> newPwd) {
+        System.out.println("newPwd.get(0) = " + newPwd.get(0));
         String userId = getTokenUser(request).getId();
         User user = userService.getOne(new QueryWrapper<User>().eq("id", userId).select("password"));
-        if (StringUtils.equals(newPwd, user.getPassword())) {
+        if (StringUtils.equals(newPwd.get(0), user.getPassword())) {
             return new ResponseUtil(500, "旧密码不能和原密码相同");
         }
-        if (userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd))) {
+        if (userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd.get(0)))) {
             return new ResponseUtil(200, "修改密码成功");
         }
         return new ResponseUtil(500, "修改密码失败");
@@ -514,16 +529,18 @@ public class AdminController {
      * return: boolean
      * exception:
      **/
-    @GetMapping("/changeUserPassword")
-    public ResponseUtil changeUserPassword(@RequestParam String schoolCode, @RequestParam Integer authorityId) {
-        School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
-        Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
+    @PostMapping("/changeUserPassword")
+    public ResponseUtil changeUserPassword(@RequestBody List<String> schoolCodes, @RequestParam Integer authorityId) {
+        for (String schoolCode : schoolCodes) {
+            School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
+            Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
 
-        if (userService.changeUserPassword(schoolCode, authorityId, RandomUtil.randomString(8), currentCycle) &&
-                userService.changeUserPassword(schoolCode, authorityId + 5, RandomUtil.randomNums(8), currentCycle)) {
-            return new ResponseUtil(200, "更换评估密码成功");
+            if (userService.changeUserPassword(schoolCode, authorityId, RandomUtil.randomNums(8), currentCycle) &&
+                    userService.changeUserPassword(schoolCode, authorityId + 5, RandomUtil.randomNums(8), currentCycle)) {
+                return new ResponseUtil(200, "更换评估密码成功");
+            }
         }
-        return new ResponseUtil(200, "更换评估密码失败");
+        return new ResponseUtil(500, "更换评估密码失败");
     }
 
 
@@ -552,6 +569,22 @@ public class AdminController {
     }
 
 
+    @GetMapping("/getCycle")
+    public ResponseUtil getCycle(@RequestParam String locationCode) {
+        CycleDTO dto = new CycleDTO().setLocationCode(locationCode);
+        // 判断行政区标识码的类型是省/市/县
+        if (locationCode.endsWith("0000000000")) {
+            dto.setType(1);
+        } else if (locationCode.endsWith("00000000")) {
+            dto.setType(2);
+        } else {
+            dto.setType(3);
+        }
+        List<CycleVo> cycle = taskService.getCycleByLocationAndRegionType(dto);
+        return new ResponseUtil(200, "查询周期成功", cycle);
+    }
+
+
     /**
      * desc: 县内所有幼儿园的评估完成后，市级管理员选择县，启动一个新的评估周期
      * 冻结以往周期所有的督评、复评数据
@@ -560,61 +593,67 @@ public class AdminController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @GetMapping("/startCycle")
-    public ResponseUtil startCycle(@RequestParam String locationCode, @RequestParam Integer evaluateIndexId) {
-        // 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
-        Integer cycle = taskService.getCurrentCycle(locationCode);
-        List<School> schoolList = schoolService.list(new QueryWrapper<School>().likeRight("school_location_code", locationCode.substring(0, 6)));
-        for (School school : schoolList) {
-            if (school.getIsLocked() == 1) {  // 删除的幼儿园不参与新周期的评估
-                continue;
-            }
-            List<EvaluateTask> tasks = taskService.list(new QueryWrapper<EvaluateTask>().eq("school_code", school.getCode()).eq("task_cycle", cycle));
-            for (EvaluateTask task : tasks) {
-                if ((Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && task.getStatus() != 4) || (!Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && !Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED))) {
-                    return new ResponseUtil(500, "县域内有幼儿园未完成全部评估任务");
+    @PostMapping("/startCycle")
+    public ResponseUtil startCycle(@RequestBody List<String> locationCodes, @RequestParam Integer evaluateIndexId) {
+        if (locationCodes.isEmpty()) {
+            return new ResponseUtil(500, "请至少选择一所学校");
+        }
+        for (String locationCode : locationCodes) {
+            // 校验县下属的学校是否全部完成评估；冻结过往周期数据；冻结账号
+            Integer cycle = taskService.getCurrentCycle(locationCode);
+            List<School> schoolList = schoolService.list(new QueryWrapper<School>().likeRight("school_location_code", locationCode.substring(0, 6)));
+            for (School school : schoolList) {
+                if (school.getIsLocked() == 1) {  // 删除的幼儿园不参与新周期的评估
+                    continue;
+                }
+                List<EvaluateTask> tasks = taskService.list(new QueryWrapper<EvaluateTask>().eq("school_code", school.getCode()).eq("task_cycle", cycle));
+                for (EvaluateTask task : tasks) {
+                    if ((Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && !Objects.equals(task.getStatus(), Const.TASK_REPORT_SUBMITTED)) || (!Objects.equals(task.getType(), Const.TASK_TYPE_SELF) && !Objects.equals(task.getStatus(), Const.TASK_REPORT_ACCEPTED))) {
+                        return new ResponseUtil(500, "县域内有幼儿园未完成全部评估任务");
+                    }
                 }
             }
-        }
 
-        // 生成评价任务
-        boolean[] success = new boolean[5];
-        ArrayList<EvaluateTask> taskList = new ArrayList<>(schoolList.size());
-        Integer currentCycle = taskService.getCurrentCycle(schoolList.get(0).getLocationCode().substring(0, 6) + "000000") + 1;
-        for (School school : schoolList) {
-            taskList.add(new EvaluateTask()
-                    .setSchoolCode(school.getCode())
-                    .setEvaluateId(evaluateIndexId)
-                    .setName("自评")
-                    .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
-                    .setCycle(currentCycle)
-                    .setStatus(Const.TASK_NOT_START)
-                    .setType(1)
-                    .setIsLocked(0));
-        }
-        success[0] = taskService.saveBatch(taskList);
-
-        for (int i = 2; i < 6; i++) {
-            String name;
-            if (i == 2) name = "督评";
-            else if (i == 3) name = "县复评";
-            else if (i == 4) name = "市复评";
-            else name = "省复评";
-            for (EvaluateTask task : taskList) {
-                task.setType(i);
-                task.setName(name);
+            // 生成评价任务
+            boolean[] success = new boolean[5];
+            ArrayList<EvaluateTask> taskList = new ArrayList<>(schoolList.size());
+            Integer currentCycle = taskService.getCurrentCycle(schoolList.get(0).getLocationCode().substring(0, 6) + "000000") + 1;
+            for (School school : schoolList) {
+                taskList.add(new EvaluateTask()
+                        .setSchoolCode(school.getCode())
+                        .setEvaluateId(evaluateIndexId)
+                        .setName("自评")
+                        .setContent(school.getName() + "第 " + currentCycle + " 周期教学质量评估")
+                        .setCycle(currentCycle)
+                        .setStatus(Const.TASK_NOT_START)
+                        .setType(1)
+                        .setIsLocked(0));
             }
-            success[i - 1] = taskService.saveBatch(taskList);
-        }
-        // 解锁县域内所有学校的自评账号，因为其不随周期变化而删除
-        userService.unlockSelfUserByLocationCode(locationCode);
+            success[0] = taskService.saveBatch(taskList);
 
-        //开启新周期
-        if (success[0] == success[1] == success[2] == success[3] == success[4] && taskService.startCycle(locationCode)) {
-            log.info("启动 {} 幼儿园第 {} 周期的教学质量评估", locationCode, currentCycle);
-            return new ResponseUtil(200, "成功启动 " + locationService.getOne(new QueryWrapper<Location>().eq("code", locationCode)).getName() + " 第 " + currentCycle + " 周期的教学质量评估");
+            for (int i = 2; i < 6; i++) {
+                String name;
+                if (i == 2) name = "督评";
+                else if (i == 3) name = "县复评";
+                else if (i == 4) name = "市复评";
+                else name = "省复评";
+                for (EvaluateTask task : taskList) {
+                    task.setType(i);
+                    task.setName(name);
+                }
+                success[i - 1] = taskService.saveBatch(taskList);
+            }
+            // 解锁县域内所有学校的自评账号，因为其不随周期变化而删除
+            userService.unlockSelfUserByLocationCode(locationCode);
+
+            //开启新周期
+            if (success[0] == success[1] == success[2] == success[3] == success[4] && taskService.startCycle(locationCode)) {
+                log.info("启动 {} 幼儿园第 {} 周期的教学质量评估", locationCode, currentCycle);
+            } else {
+                return new ResponseUtil(500, "开启新评估周期失败");
+            }
         }
-        return new ResponseUtil(500, "开启新评估周期失败");
+        return new ResponseUtil(200, "成功启动新一轮评估周期");
     }
 
 
@@ -776,30 +815,46 @@ public class AdminController {
      * exception:
      **/
     @GetMapping("/listLocationReport")
-    public ResponseUtil listLocationReport(HttpServletRequest request) {
+    public ResponseUtil listLocationReport(HttpServletRequest request, Integer year) {
         String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         Integer role = getAdminRole(request);
         List<LocationReport> resultList = new ArrayList<>();
+        QueryWrapper<LocationReport> wrapper = new QueryWrapper<LocationReport>().eq("location_code", locationCode);
+        if (year != null) {
+            wrapper.eq("year", year);
+        }
 
         if (role.equals(Const.ROLE_ADMIN_COUNTY)) {
-            resultList = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode));
+            resultList = locationReportService.list(wrapper);
         } else if (role.equals(Const.ROLE_ADMIN_CITY)) {
-            resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode)));  //市级报告
+            resultList.addAll(locationReportService.list(wrapper));  //市级报告
             List<Location> locations = locationService.list(new QueryWrapper<Location>().eq("p_code", locationCode));
             for (Location location : locations) {
-                List<LocationReport> reports = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", location.getCode()));
+                QueryWrapper<LocationReport> queryWrapper = new QueryWrapper<LocationReport>().eq("location_code", location.getCode());
+                if (year != null) {
+                    queryWrapper.eq("year", year);
+                }
+                List<LocationReport> reports = locationReportService.list(queryWrapper);
                 if (!reports.isEmpty()) {
                     resultList.addAll(reports);
                 }
             }
         } else {
-            resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", locationCode))); // 省级报告
+            resultList.addAll(locationReportService.list(wrapper)); // 省级报告
             List<Location> cities = locationService.list(new QueryWrapper<Location>().eq("p_code", locationCode));
             for (Location city : cities) {
-                resultList.addAll(locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", city.getCode())));  // 市级报告
+                QueryWrapper<LocationReport> queryWrapper = new QueryWrapper<LocationReport>().eq("location_code", city.getCode());
+                if (year != null) {
+                    queryWrapper.eq("year", year);
+                }
+                resultList.addAll(locationReportService.list(queryWrapper));  // 市级报告
                 List<Location> counties = locationService.list(new QueryWrapper<Location>().eq("p_code", city.getCode()));
                 for (Location county : counties) {
-                    List<LocationReport> reports = locationReportService.list(new QueryWrapper<LocationReport>().eq("location_code", county.getCode()));
+                    QueryWrapper<LocationReport> queryWrapper1 = new QueryWrapper<LocationReport>().eq("location_code", county.getCode());
+                    if (year != null) {
+                        queryWrapper1.eq("year", year);
+                    }
+                    List<LocationReport> reports = locationReportService.list(queryWrapper1);
                     if (!reports.isEmpty()) {
                         resultList.addAll(reports);
                     }
@@ -843,6 +898,33 @@ public class AdminController {
             return new ResponseUtil(200, "删除成功");
         }
         return new ResponseUtil(500, "删除失败");
+    }
+
+
+    /**
+     * desc: 批量下载区域报告文件
+     * params: [ids]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @PostMapping("/downloadLocationReport")
+    public ResponseUtil downloadLocationReport(@RequestBody List<Integer> ids) {
+        ArrayList<String> pathList = new ArrayList<>();
+        for (Integer id : ids) {
+            LocationReport report = locationReportService.getById(id);
+            if (report == null) {
+                return new ResponseUtil(500, "找不到id对应的区域报告，请检查参数");
+            }
+            pathList.add(report.getFilePath().substring(43));
+        }
+        String directoryPath = "C:\\Users\\Public\\Downloads\\区域报告导出\\";
+        File dir = new File(directoryPath);
+        dir.mkdir();
+        ossUtil.downloadList(pathList, directoryPath);
+
+
+        return new ResponseUtil(200, "批量下载区域报告成功");
+
     }
 
 

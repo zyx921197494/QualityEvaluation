@@ -8,15 +8,15 @@ package com.winkel.qualityevaluation.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
-import com.winkel.qualityevaluation.vo.SchoolVo;
-import com.winkel.qualityevaluation.vo.UserVo;
+import com.winkel.qualityevaluation.pojo.vo.SchoolVo;
+import com.winkel.qualityevaluation.pojo.vo.UserVo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,7 +103,7 @@ public class EvaluateCommonController {
      * exception:
      **/
     @PostMapping("/updateUserInfo")
-    public ResponseUtil updateUserInfo(HttpServletRequest request,@RequestBody UserVo userVo) {
+    public ResponseUtil updateUserInfo(HttpServletRequest request, @RequestBody UserVo userVo) {
         if (userService.update(new UpdateWrapper<User>()
                 .eq("id", getTokenUser(request).getId())
                 .set("name", userVo.getName())
@@ -167,8 +167,8 @@ public class EvaluateCommonController {
         }
         return new ResponseUtil(200, "查询幼儿园信息成功", school);
     }
-    
-    
+
+
 //    /**
 //     * desc: 未注册幼儿园首次登录时填写学校数据
 //     * params: [school]

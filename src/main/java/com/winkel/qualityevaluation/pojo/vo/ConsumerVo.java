@@ -1,4 +1,4 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.vo;
 /*
   @ClassName ConsumerVo
   @Description

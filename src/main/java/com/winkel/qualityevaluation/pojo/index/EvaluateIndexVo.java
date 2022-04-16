@@ -1,23 +1,29 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.index;
 /*
-  @ClassName UserAuthority
+  @ClassName EvaluateIndexVo
   @Description
   @Author winkel
-  @Date 2022-03-17 12:12
+  @Date 2022-04-13 19:23
   */
 
+import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class UserAuthority {
-    private String userId;
-    private Integer authorityId;
+public class EvaluateIndexVo {
+
+    private EvaluateIndex evaluateIndex;
+
+    private List<Index1Vo> index1List;
+
 }

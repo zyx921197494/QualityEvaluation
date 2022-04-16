@@ -16,7 +16,7 @@
         <result column="cycle" property="cycle"/>
     </resultMap>
 
-    <resultMap id="AccountMap" type="com.winkel.qualityevaluation.vo.AccountVo">
+    <resultMap id="AccountMap" type="com.winkel.qualityevaluation.pojo.vo.AccountVo">
         <result column="username" property="username"/>
         <result column="password" property="password"/>
         <result column="authority_id" property="authorityId"/>

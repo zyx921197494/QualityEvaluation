@@ -1,9 +1,9 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.vo;
 /*
-  @ClassName Index2Vo
+  @ClassName SimpleSchoolVo
   @Description
   @Author winkel
-  @Date 2022-04-09 13:48
+  @Date 2022-04-08 21:31
   */
 
 import lombok.Data;
@@ -13,9 +13,9 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @NoArgsConstructor
-public class Index2Vo {
+public class SimpleSchoolVo {
 
-    private Integer count;
-    private Integer index2Id;
+    private String code;
+    private String name;
 
 }

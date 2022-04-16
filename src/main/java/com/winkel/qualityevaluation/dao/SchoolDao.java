@@ -8,7 +8,7 @@ package com.winkel.qualityevaluation.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.winkel.qualityevaluation.entity.School;
-import com.winkel.qualityevaluation.vo.SchoolVo;
+import com.winkel.qualityevaluation.pojo.vo.SchoolVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

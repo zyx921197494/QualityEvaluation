@@ -2,12 +2,10 @@ package com.winkel.qualityevaluation.service.api;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmit;
-import com.winkel.qualityevaluation.vo.CountDTO;
-import com.winkel.qualityevaluation.vo.Index2Vo;
-import com.winkel.qualityevaluation.vo.ScoreDTO;
-import com.winkel.qualityevaluation.vo.ScoreVo;
-import org.apache.ibatis.annotations.Param;
-import org.apache.poi.ss.formula.functions.Count;
+import com.winkel.qualityevaluation.pojo.dto.CountDTO;
+import com.winkel.qualityevaluation.pojo.vo.Index2Vo;
+import com.winkel.qualityevaluation.pojo.dto.ScoreDTO;
+import com.winkel.qualityevaluation.pojo.vo.ScoreVo;
 
 import java.util.List;
 

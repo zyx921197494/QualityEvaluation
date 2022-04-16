@@ -1,9 +1,9 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.vo;
 /*
-  @ClassName UserVo
+  @ClassName CycleVo
   @Description
   @Author winkel
-  @Date 2022-03-23 11:08
+  @Date 2022-04-16 15:09
   */
 
 import lombok.AllArgsConstructor;
@@ -17,9 +17,11 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class UserVo {
+public class CycleVo {
 
-    private String name;
-    private String email;
+    private String provinceName;
+    private String countyName;
+    private String locationCode;
+    private Integer currentCycle;
 
 }

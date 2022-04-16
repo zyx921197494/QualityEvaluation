@@ -17,12 +17,19 @@
         <result column="task_is_locked" property="isLocked"/>
     </resultMap>
 
-    <resultMap id="schoolTaskMap" type="com.winkel.qualityevaluation.vo.SchoolTaskVo">
+    <resultMap id="schoolTaskMap" type="com.winkel.qualityevaluation.pojo.vo.SchoolTaskVo">
         <result column="school_code" property="schoolCode"/>
         <result column="school_name" property="schoolName"/>
         <result column="evaluate_task_id" property="taskId"/>
         <result column="evaluate_task_start_time" property="startDate"/>
         <result column="task_status" property="taskStatus"/>
+    </resultMap>
+
+    <resultMap id="cycleMap" type="com.winkel.qualityevaluation.pojo.vo.CycleVo">
+        <result column="provinceName" property="provinceName"/>
+        <result column="countyName" property="countyName"/>
+        <result column="cycle_current" property="currentCycle"/>
+        <result column="code" property="locationCode"/>
     </resultMap>
 
     <update id="startCycle" parameterType="java.lang.String">
@@ -346,6 +353,24 @@
           and school.school_code = task.school_code
           and task.task_type = #{type}
           and task.school_code = #{schoolCode}
+    </select>
+
+    <select id="listCycleByLocationAndRegionType" resultMap="cycleMap">
+        select location.name as countyName, location.code, cycle.cycle_current
+        from location,
+        evaluatecycle as cycle
+        where location.code = cycle.cycle_county_location_code and
+        <choose>
+            <when test="dto.type eq 1">
+                CONCAT(LEFT(cycle.cycle_county_location_code, 2), '0000000000') = #{dto.locationCode}
+            </when>
+            <when test="dto.type eq 2">
+                CONCAT(LEFT(cycle.cycle_county_location_code, 4), '00000000') = #{dto.locationCode}
+            </when>
+            <when test="dto.type eq 3">
+                CONCAT(LEFT(cycle.cycle_county_location_code, 6), '000000') = #{dto.locationCode}
+            </when>
+        </choose>
     </select>
 
 

@@ -1,9 +1,9 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.dto;
 /*
-  @ClassName SimpleSchoolVo
+  @ClassName CycleDTO
   @Description
   @Author winkel
-  @Date 2022-04-08 21:31
+  @Date 2022-04-16 15:23
   */
 
 import lombok.Data;
@@ -13,9 +13,9 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @NoArgsConstructor
-public class SimpleSchoolVo {
+public class CycleDTO {
 
-    private String code;
-    private String name;
+    private String locationCode;
+    private Integer type;
 
 }

@@ -4,8 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.Authority;
 import com.winkel.qualityevaluation.entity.School;
 import com.winkel.qualityevaluation.entity.User;
-import com.winkel.qualityevaluation.vo.AccountVo;
-import org.apache.ibatis.annotations.Param;
+import com.winkel.qualityevaluation.pojo.vo.AccountVo;
 
 import java.util.List;
 

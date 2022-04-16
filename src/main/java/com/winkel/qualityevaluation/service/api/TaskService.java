@@ -2,8 +2,10 @@ package com.winkel.qualityevaluation.service.api;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
-import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
-import com.winkel.qualityevaluation.vo.SchoolTaskVo;
+import com.winkel.qualityevaluation.pojo.dto.CycleDTO;
+import com.winkel.qualityevaluation.pojo.dto.SchoolTaskDTO;
+import com.winkel.qualityevaluation.pojo.vo.CycleVo;
+import com.winkel.qualityevaluation.pojo.vo.SchoolTaskVo;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,5 +49,7 @@ public interface TaskService extends IService<EvaluateTask> {
     List<String> getFileNameBySchoolcodeAndType(List<String> schoolCodes, Integer type);
 
     Integer getTaskIdByBySchoolcodeAndType(String schoolCode, Integer type);
+
+    List<CycleVo> getCycleByLocationAndRegionType(CycleDTO cycleDTO);
 
 }

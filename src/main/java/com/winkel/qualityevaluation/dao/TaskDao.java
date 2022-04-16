@@ -2,8 +2,10 @@ package com.winkel.qualityevaluation.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.winkel.qualityevaluation.entity.task.EvaluateTask;
-import com.winkel.qualityevaluation.vo.SchoolTaskDTO;
-import com.winkel.qualityevaluation.vo.SchoolTaskVo;
+import com.winkel.qualityevaluation.pojo.dto.CycleDTO;
+import com.winkel.qualityevaluation.pojo.dto.SchoolTaskDTO;
+import com.winkel.qualityevaluation.pojo.vo.CycleVo;
+import com.winkel.qualityevaluation.pojo.vo.SchoolTaskVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -50,5 +52,9 @@ public interface TaskDao extends BaseMapper<EvaluateTask> {
     List<String> selectFileNameBySchoolcodeAndType(@Param("schoolCodes") List<String> schoolCodes, @Param("type") Integer type);
 
     Integer getTaskIdByBySchoolcodeAndType(@Param("schoolCode") String schoolCode, @Param("type") Integer type);
+
+    List<CycleVo> listCycleByLocationAndRegionType(@Param("dto") CycleDTO dto);  // type:1、2、3为省市县
+
+
 
 }

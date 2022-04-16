@@ -13,8 +13,8 @@ import com.winkel.qualityevaluation.entity.User;
 import com.winkel.qualityevaluation.service.api.UserService;
 import com.winkel.qualityevaluation.util.Const;
 import com.winkel.qualityevaluation.util.RandomUtil;
-import com.winkel.qualityevaluation.vo.AccountVo;
-import com.winkel.qualityevaluation.vo.UserAuthority;
+import com.winkel.qualityevaluation.pojo.vo.AccountVo;
+import com.winkel.qualityevaluation.pojo.UserAuthority;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

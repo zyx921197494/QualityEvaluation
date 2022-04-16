@@ -1,4 +1,4 @@
-package com.winkel.qualityevaluation.vo;
+package com.winkel.qualityevaluation.pojo.vo;
 /*
   @ClassName LocationVo
   @Description
@@ -6,7 +6,6 @@ package com.winkel.qualityevaluation.vo;
   @Date 2022-04-14 14:48
   */
 
-import com.winkel.qualityevaluation.entity.Location;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
