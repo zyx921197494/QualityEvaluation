@@ -300,7 +300,6 @@ public class AdminController {
      **/
     @PostMapping("/schoolTask")
     public ResponseUtil schoolTask(@RequestBody SchoolTaskDTO schoolTaskDTO) {
-        System.out.println("schoolTaskDTO = " + schoolTaskDTO);
         if (schoolTaskDTO.getCurrentPage() == null || schoolTaskDTO.getPageSize() == null) {
             return new ResponseUtil(500, "请求中未包含分页参数");
         }
@@ -312,6 +311,25 @@ public class AdminController {
         for (SchoolTaskVo vo : schoolTaskVos) {
             vo.setLastSubmit(taskService.getLastSubmitTimeByTaskId(vo.getTaskId()));
             vo.setFirstSubmit(taskService.getFirstSubmitTimeByTaskId(vo.getTaskId()));
+            List<EvaluateSubmit> submits = submitService.list(new QueryWrapper<EvaluateSubmit>().eq("evaluate_task_id", vo.getTaskId()));  // 已提交数据
+            List<EvaluateIndex3> index3s = index3Service.listIndex3ByEvaluateId(taskService.getById(vo.getTaskId()).getEvaluateId());  // 所有题目
+            List<Index3Vo> result = new ArrayList<>(index3s.size());  // 最终返回的VoList
+            int current = 0;
+            for (int i = 0; i < 40; i++) {
+                EvaluateIndex3 index3 = index3s.get(i);
+                Index3Vo index3Vo = new Index3Vo()
+                        .setIndex3id(index3.getIndex3Id())
+                        .setIndex3Name(index3.getIndex3Name())
+                        .setIndex3Content(index3.getIndex3Content())
+                        .setType(String.valueOf(index3.getType()))
+                        .setMemo(index3.getMemo());
+                if (current < submits.size() && Objects.equals(submits.get(current).getIndex3Id(), index3.getIndex3Id())) {  // 已经回答该题
+                    index3Vo.setContent(submits.get(current).getContent());
+                    ++current;
+                }
+                result.add(index3Vo);
+            }
+            vo.setSubmits(result);
         }
         return new ResponseUtil(200, "查询成功", schoolTaskVos);
     }
@@ -863,7 +881,7 @@ public class AdminController {
         }
 
         if (resultList.isEmpty()) {
-            return new ResponseUtil(200, "当前辖区内未上传任何区域报告");
+            return new ResponseUtil(500, "当前辖区内未上传任何区域报告");
         }
         return new ResponseUtil(200, "查询成功", resultList);
     }

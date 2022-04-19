@@ -30,8 +30,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -123,14 +125,17 @@ public class SelfController {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SELF);
         List<Index2Vo> voList = submitService.getComplete(taskId);  // 各指标完成情况
         List<Index2Vo> index2s = submitService.getIndex2ByEvaluateId(taskService.getById(taskId).getEvaluateId());  // 各指标对应的问题数量
-        ArrayList<Integer> result = new ArrayList<>();
-        for (Index2Vo vo : voList) {
-            if (Objects.equals(vo.getCount(), index2s.get(vo.getIndex2Id() - 1).getCount())) {
-                result.add(vo.getIndex2Id());
+        ArrayList<Index2Vo> result = new ArrayList<>(index2s);
+        for (Index2Vo vo : result) {
+            vo.setIsComplete("未完成");
+            for (Index2Vo index2Vo : voList) {
+                if (Objects.equals(vo.getIndex2Id(), index2Vo.getIndex2Id())) {
+                    vo.setIsComplete("已完成");
+                }
             }
         }
         if (result.isEmpty()) {
-            return new ResponseUtil(200, "未完成任何评估指标");
+            return new ResponseUtil(500, "未完成任何评估指标");
         }
         return new ResponseUtil(200, "查找指标完成情况成功", result);
     }
@@ -290,7 +295,7 @@ public class SelfController {
         boolean success = taskService.update(new UpdateWrapper<EvaluateTask>().eq("evaluate_task_id", taskId).set("task_status", Const.TASK_DATA_SUBMITTED)) &&
                 userService.lockUserBySchoolCodeAndType(dbUser.getSchoolCode(), Const.ROLE_EVALUATE_SELF);
         if (success) {
-            return new ResponseUtil(200, "提交自评任务成功");
+            return new ResponseUtil(200, "完成自评任务");
         }
         return new ResponseUtil(500, "提交自评任务失败");
     }

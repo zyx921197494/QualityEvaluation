@@ -133,8 +133,12 @@ public class CommonController {
      * exception:
      **/
     @GetMapping("/download")
-    public ResponseUtil download(@RequestParam("filename") List<String> filenames) {
-        ossUtil.downloadList(filenames);
+    public ResponseUtil download(@RequestParam("filename") List<String> filenames, String path) {
+        if (StringUtils.isBlank(path)) {
+            ossUtil.downloadList(filenames, null);
+        } else {
+            ossUtil.downloadList(filenames, path);
+        }
         return new ResponseUtil(500, "下载成功");
     }
 

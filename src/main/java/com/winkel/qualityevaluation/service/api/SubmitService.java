@@ -26,20 +26,20 @@ public interface SubmitService extends IService<EvaluateSubmit> {
 //    Double getCountByProvincecode(String provinceCode);
 
     /**
-     * desc: 获取县域内各学校在不同督评完成情况下5项一级指标的得分
+     * desc: 获取县域内各学校不同任务5项一级指标的得分
      * params: [countycode, taskStatus] countycode：县的地址码 taskStatus  taskStatus：督评完成状态
      * return: java.util.List<com.winkel.qualityevaluation.vo.ScoreVo>
      * exception:
      **/
-    List<ScoreVo> getIndex1ScoreByCountycode(String countycode, Integer taskStatus);
+    List<ScoreVo> getIndex1ScoreByCountycode(String countycode, Integer taskType);
 
     /**
-     * desc: 获取县域内各学校在不同督评完成情况下一级指标的总分，并按降序排序
+     * desc: 获取县域内各学校不同任务一级指标的总分，并按降序排序
      * params: [countycode, taskStatus] countycode：县的地址码 taskStatus  taskStatus：督评完成状态
      * return: java.util.List<com.winkel.qualityevaluation.vo.ScoreVo>
      * exception:
      **/
-    List<ScoreVo> getTotalScoreByCountycode(String countycode, Integer taskStatus);
+    List<ScoreVo> getTotalScoreByCountycode(String countycode, Integer taskType);
 
     // 以幼儿园某项属性区分评估得分
     List<ScoreVo> getScoreByIsCity(ScoreDTO scoreDTO);

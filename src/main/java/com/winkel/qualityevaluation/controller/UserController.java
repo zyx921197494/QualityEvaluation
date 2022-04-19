@@ -47,7 +47,7 @@ public class UserController {
         if (result > 0) {
             User user = userService.getOne(new QueryWrapper<User>().select("id", "is_locked").eq("username", username));
             if (user.getIsLocked() != 0) {
-                throw new LockedException("账户已被锁定");
+                return new ResponseUtil(500, "账户已被锁定");
             }
             Map<String, Object> claims = new HashMap<>(3);
             claims.put("username", username);
@@ -81,11 +81,16 @@ public class UserController {
         Integer id = authoritie.getId();
         if (id > 0 && id < 5) {
             return Const.TOKEN_TYPE_ADMIN;
-        } else if (id > 4 && id < 10) {
-            return Const.TOKEN_TYPE_USER;
-        } else {
-            return Const.TOKEN_TYPE_LEADER;
+        } else if (id == 5) {
+            return Const.TOKEN_TYPE_USER_SELF;
+        } else if (id == 6) {
+            return Const.TOKEN_TYPE_USER_SUP;
+        } else if (id == 10) {
+            return Const.TOKEN_TYPE_USER_SELF_LEADER;
+        } else if (id == 11) {
+            return Const.TOKEN_TYPE_USER_SUP_LEADER;
         }
+        return null;
     }
 
 }

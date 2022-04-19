@@ -40,6 +40,7 @@ public class MailUtil {
             redisTemplate.opsForValue().set(email, code, 180, TimeUnit.SECONDS);
             mailSender.send(message);
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
         return true;

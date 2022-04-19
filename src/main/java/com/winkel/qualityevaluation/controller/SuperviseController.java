@@ -122,14 +122,17 @@ public class SuperviseController {
         Integer taskId = taskService.getTaskIdByUserId(getTokenUser(request).getId(), Const.TASK_TYPE_SUPERVISOR);
         List<Index2Vo> voList = submitService.getComplete(taskId);  // 各指标完成情况
         List<Index2Vo> index2s = submitService.getIndex2ByEvaluateId(taskService.getById(taskId).getEvaluateId());  // 各指标对应的问题数量
-        ArrayList<Integer> result = new ArrayList<>();
-        for (Index2Vo vo : voList) {
-            if (Objects.equals(vo.getCount(), index2s.get(vo.getIndex2Id() - 1).getCount())) {
-                result.add(vo.getIndex2Id());
+        ArrayList<Index2Vo> result = new ArrayList<>(index2s);
+        for (Index2Vo vo : result) {
+            vo.setIsComplete("未完成");
+            for (Index2Vo index2Vo : voList) {
+                if (Objects.equals(vo.getIndex2Id(), index2Vo.getIndex2Id())) {
+                    vo.setIsComplete("已完成");
+                }
             }
         }
         if (result.isEmpty()) {
-            return new ResponseUtil(200, "未完成任何评估指标");
+            return new ResponseUtil(500, "未完成任何评估指标");
         }
         return new ResponseUtil(200, "查找指标完成情况成功", result);
     }

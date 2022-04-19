@@ -18,7 +18,7 @@ spring:
   redis:
     host: 127.0.0.1
     port: 6379
-    password: Zyx3527109
+#    password: Zyx3527109
     timeout: 30000
     jedis:
       pool:

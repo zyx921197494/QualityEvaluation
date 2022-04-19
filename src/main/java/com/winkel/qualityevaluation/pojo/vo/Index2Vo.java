@@ -17,5 +17,8 @@ public class Index2Vo {
 
     private Integer count;
     private Integer index2Id;
+    private String index2Content;
+    private String index1Content;
+    private String isComplete;
 
 }

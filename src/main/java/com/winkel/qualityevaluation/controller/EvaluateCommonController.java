@@ -13,6 +13,7 @@ import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex1;
 import com.winkel.qualityevaluation.entity.evaluate.EvaluateIndex2;
 import com.winkel.qualityevaluation.entity.task.EvaluateSubmitFile;
+import com.winkel.qualityevaluation.entity.task.EvaluateTask;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
 import com.winkel.qualityevaluation.pojo.vo.SchoolVo;
@@ -23,8 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -160,12 +163,36 @@ public class EvaluateCommonController {
     @GetMapping("/getSchoolInfo")
     public ResponseUtil getSchoolInfo(HttpServletRequest request) {
         String schoolCode = userService.getById(getTokenUser(request).getId()).getSchoolCode();
-        System.out.println("schoolCode = " + schoolCode);
         SchoolVo school = schoolService.getSchoolVoBySchoolCode(schoolCode);
         if (school == null) {
             return new ResponseUtil(200, "幼儿园信息为空");
         }
         return new ResponseUtil(200, "查询幼儿园信息成功", school);
+    }
+
+    /**
+     * desc: 查询任务周期
+     * params: [request]
+     * return: com.winkel.qualityevaluation.util.ResponseUtil
+     * exception:
+     **/
+    @GetMapping("/getTaskTime")
+    public ResponseUtil getTaskTime(HttpServletRequest request) {
+        String id = getTokenUser(request).getId();
+        Integer taskId = taskService.getTaskIdByUserId(id, Const.TASK_TYPE_SELF);
+        EvaluateTask task = taskService.getById(taskId);
+        HashMap<String, Object> result = new HashMap<>();
+        LocalDateTime start = task.getStartTime();
+        LocalDateTime end = task.getEndTIme();
+        if (start == null) {
+            return new ResponseUtil(500, "评估任务暂未启动");
+        }
+        boolean close = (task.getStatus() >= Const.TASK_DATA_SUBMITTED) || LocalDateTime.now().isAfter(task.getEndTIme());
+        result.put("start", start);
+        result.put("end", end);
+        result.put("close", close);
+
+        return new ResponseUtil(200, "获取任务周期成功", result);
     }
 
 

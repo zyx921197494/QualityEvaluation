@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Accessors(chain = true)
@@ -26,5 +27,7 @@ public class SchoolTaskVo {
     private String taskStatus;
     private LocalDateTime lastSubmit;
     private LocalDateTime FirstSubmit;
+
+   private List<Index3Vo> submits;
 
 }

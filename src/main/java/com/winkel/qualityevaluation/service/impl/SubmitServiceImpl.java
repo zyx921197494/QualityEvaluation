@@ -55,31 +55,29 @@ public class SubmitServiceImpl extends ServiceImpl<SubmitDao, EvaluateSubmit> im
 //    }
 
     /**
-     * desc: 获取县域内各学校在不同督评完成情况下5项一级指标的得分
+     * desc: 获取县域内各学校在不同任务5项一级指标的得分
      * params: [countycode, taskStatus] countycode： taskStatus  taskStatus：
      * return: java.util.List<com.winkel.qualityevaluation.vo.ScoreVo>
      * exception:
      *
      * @param countycode 县的地址码
-     * @param taskStatus 督评完成状态
      */
     @Override
-    public List<ScoreVo> getIndex1ScoreByCountycode(String countycode, Integer taskStatus) {
-        return submitDao.selectIndex1ScoreByCountycode(countycode, taskStatus);
+    public List<ScoreVo> getIndex1ScoreByCountycode(String countycode, Integer taskType) {
+        return submitDao.selectIndex1ScoreByCountycode(countycode, taskType);
     }
 
     /**
-     * desc: 获取县域内各学校在不同督评完成情况下一级指标的总分，并按降序排序
+     * desc: 获取县域内各学校在不同任务一级指标的总分，并按降序排序
      * params: [countycode, taskStatus] countycode：县的地址码 taskStatus  taskStatus：督评完成状态
      * return: java.util.List<com.winkel.qualityevaluation.vo.ScoreVo>
      * exception:
      *
      * @param countycode 县的地址码
-     * @param taskStatus 督评完成状态
      */
     @Override
-    public List<ScoreVo> getTotalScoreByCountycode(String countycode, Integer taskStatus) {
-        return submitDao.selectTotalScoreByCountycode(countycode, taskStatus);
+    public List<ScoreVo> getTotalScoreByCountycode(String countycode, Integer taskType) {
+        return submitDao.selectTotalScoreByCountycode(countycode, taskType);
     }
 
     // 以幼儿园某项属性区分评估得分
