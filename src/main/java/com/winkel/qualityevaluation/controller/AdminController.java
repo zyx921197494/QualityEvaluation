@@ -786,8 +786,7 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/uploadLocationReport")
-    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer
-            year, @RequestParam("file") MultipartFile file) {
+    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer year, @RequestParam("file") MultipartFile file) {
         String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         LocationReport report = locationReportService.getOne(new QueryWrapper<LocationReport>().eq("location_code", locationCode).eq("year", year));
         boolean reUpload = false;  // 是否是覆盖区域报告

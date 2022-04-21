@@ -132,14 +132,14 @@ public class CommonController {
      * return: com.winkel.qualityevaluation.util.ResponseUtil
      * exception:
      **/
-    @GetMapping("/download")
-    public ResponseUtil download(@RequestParam("filename") List<String> filenames, String path) {
-        if (StringUtils.isBlank(path)) {
+    @PostMapping("/download")
+    public ResponseUtil download(@RequestBody List<String> filenames, String path) {
+        try {
             ossUtil.downloadList(filenames, null);
-        } else {
-            ossUtil.downloadList(filenames, path);
+        } catch (Exception e) {
+            return new ResponseUtil(500, "下载失败");
         }
-        return new ResponseUtil(500, "下载成功");
+        return new ResponseUtil(200, "下载成功");
     }
 
     private User getTokenUser(HttpServletRequest request) {
