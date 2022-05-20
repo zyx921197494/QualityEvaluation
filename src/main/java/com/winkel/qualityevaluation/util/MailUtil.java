@@ -49,7 +49,7 @@ public class MailUtil {
     public RedisResult validateEmailCode(String email, String code) {
         String key = redisTemplate.opsForValue().get(email);
         if (key == null) {
-            return new RedisResult().setStatus(Const.REDIS_CODE_TIMEOUT).setMsg("验证码已过期");
+            return new RedisResult().setStatus(Const.REDIS_CODE_TIMEOUT).setMsg("验证码已过期，请重新发送验证码");
         }
         if (StringUtils.equals(key, code)) {
             return new RedisResult().setStatus(Const.REDIS_CODE_RIGHT).setMsg("验证码正确");

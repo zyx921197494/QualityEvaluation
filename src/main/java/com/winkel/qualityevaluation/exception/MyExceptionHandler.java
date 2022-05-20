@@ -43,49 +43,63 @@ public class MyExceptionHandler implements ResponseBodyAdvice<Object> {
         return ResponseUtil.response(200, "OK", body);
     }
 
+    @ResponseBody
     @ExceptionHandler(AuthorityNotFoundException.class)
     public ResponseUtil handleAuthorityNotFoundException(Exception e) {
         return ResponseUtil.response(401, e.getMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(AccountException.class)
     public ResponseUtil handleAccountException(Exception e) {
-        return ResponseUtil.response(403, e.getMessage(), null);
+        return new ResponseUtil(500, e.getMessage());
     }
 
-
+    @ResponseBody
     @ExceptionHandler(LockedException.class)
     public ResponseUtil handleLockedException(Exception e) {
-        return ResponseUtil.response(403, e.getMessage(), null);
+        return ResponseUtil.response(500, e.getMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(ExcelException.class)
     public ResponseUtil handleExcelException(Exception e) {
         return ResponseUtil.response(500, e.getMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(TaskException.class)
     public ResponseUtil handleTaskException(Exception e) {
         return ResponseUtil.response(500, e.getMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(NullPointerException.class)
     public ResponseUtil handleNullPointerException(Exception e) {
         return ResponseUtil.response(500, "空指针异常", null);
     }
 
+    @ResponseBody
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseUtil handleMissingServletRequestParameterException(Exception e) {
         return ResponseUtil.response(500, ((MissingServletRequestParameterException) e).getMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseUtil handleConstraintViolationException(Exception e) {
         return ResponseUtil.response(500, ((MethodArgumentNotValidException) e).getBindingResult().getFieldError().getDefaultMessage(), null);
     }
 
+    @ResponseBody
     @ExceptionHandler(ConsumerException.class)
     public ResponseUtil handleConsumerException(Exception e) {
+        return ResponseUtil.response(500, e.getMessage());
+    }
+
+    @ResponseBody
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseUtil handleRuntimeException(Exception e) {
         return ResponseUtil.response(500, e.getMessage());
     }
 

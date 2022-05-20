@@ -24,9 +24,6 @@ import com.winkel.qualityevaluation.pojo.dto.SchoolTaskDTO;
 import com.winkel.qualityevaluation.pojo.vo.*;
 import com.winkel.qualityevaluation.service.api.*;
 import com.winkel.qualityevaluation.util.*;
-import com.winkel.qualityevaluation.pojo.index.EvaluateIndexVo;
-import com.winkel.qualityevaluation.pojo.index.Index1Vo;
-import com.winkel.qualityevaluation.pojo.index.Index2Vo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -93,51 +90,134 @@ public class AdminController {
         return new ResponseUtil(200, "查找评价体系", list);
     }
 
-    /**
-     * desc: 启动评估周期页面：查询所有评价体系
-     * params: []
-     * return: com.winkel.qualityevaluation.util.ResponseUtil
-     * exception:
-     **/
-    @GetMapping("/listEvaluateIndex")
-    public ResponseUtil listEvaluateIndex() {
-        List<EvaluateIndex> list = indexService.list();
+    @GetMapping("/getIndex1/{indexId}")
+    public ResponseUtil getIndex1(@PathVariable String indexId) {
+        List<EvaluateIndex1> list = index1Service.list(new QueryWrapper<EvaluateIndex1>().eq("evaluate_id", indexId));
         if (list.isEmpty()) {
-            return new ResponseUtil(200, "评价体系为空");
+            return new ResponseUtil(500, "一级指标为空");
         }
-        return new ResponseUtil(200, "查询评价体系成功", list);
+        return new ResponseUtil(200, "查找二级指标成功", list);
     }
 
-    /**
-     * desc: 创建一套评价体系
-     * params: [vo]
-     * return: com.winkel.qualityevaluation.util.ResponseUtil
-     * exception:
-     **/
-    @PostMapping("/newEvaluateIndex")
-    public ResponseUtil newEvaluateIndex(@RequestBody EvaluateIndexVo vo) {
-        EvaluateIndex index = vo.getEvaluateIndex();
-        indexService.save(index);
+    @GetMapping("/getIndex2/{index1Id}")
+    public ResponseUtil getIndex2(@PathVariable String index1Id) {
+        List<EvaluateIndex2> list = index2Service.list(new QueryWrapper<EvaluateIndex2>().eq("evaluate_index1_id", index1Id));
+        if (list.isEmpty()) {
+            return new ResponseUtil(500, "二级指标为空");
+        }
+        return new ResponseUtil(200, "查找二级指标成功", list);
+    }
 
-        List<Index1Vo> index1List = vo.getIndex1List();
-        for (Index1Vo index1Vo : index1List) {
-            EvaluateIndex1 index1 = index1Vo.getEvaluateIndex1();
-            index1Service.save(index1.setEvaluateIndexId(index.getEvaluateId()));
+    @GetMapping("/getIndex3/{index2Id}")
+    public ResponseUtil getIndex3(@PathVariable String index2Id) {
+        List<EvaluateIndex3> list = index3Service.list(new QueryWrapper<EvaluateIndex3>().eq("evaluate_index2_id", index2Id));
+        if (list.isEmpty()) {
+            return new ResponseUtil(500, "三级指标为空");
+        }
+        return new ResponseUtil(200, "查找三级指标成功", list);
+    }
 
-            List<Index2Vo> index2VoList = index1Vo.getIndex2VoList();
-            for (Index2Vo index2Vo : index2VoList) {
-                EvaluateIndex2 index2 = index2Vo.getEvaluateIndex2();
-                index2Service.save(index2.setIndex1Id(index1.getIndex1Id()));
+    @GetMapping("/newIndex")
+    public ResponseUtil newIndex(@RequestParam String name, @RequestParam String memo) {
+        boolean save = indexService.save(new EvaluateIndex(null, name, memo));
+        if (save) {
+            return new ResponseUtil(200, "创建评价体系成功");
+        }
+        return new ResponseUtil(500, "创建评价体系失败");
+    }
 
-                List<EvaluateIndex3> index3List = index2Vo.getIndex3List();
-                for (EvaluateIndex3 index3 : index3List) {
-                    index3Service.save(index3.setIndex2Id(index2.getIndex2Id()));
-                }
+    @PostMapping("/newIndex1")
+    public ResponseUtil newIndex1(@RequestParam Integer indexId, @RequestBody List<EvaluateIndex1> list) {
+        for (EvaluateIndex1 index1 : list) {
+            index1.setEvaluateIndexId(indexId);
+            index1.setIndex1Name("A" + RandomUtil.randomString(6));
+        }
+        boolean saveBatch = index1Service.saveBatch(list);
+        if (saveBatch) {
+            return new ResponseUtil(200, "创建一级指标成功");
+        }
+        return new ResponseUtil(500, "创建一级指标失败");
+    }
+
+    @PostMapping("/newIndex2")
+    public ResponseUtil newIndex2(@RequestParam Integer index1Id, @RequestBody List<EvaluateIndex2> list) {
+        for (EvaluateIndex2 index2 : list) {
+            index2.setIndex1Id(index1Id);
+            index2.setIndex2Name("B" + RandomUtil.randomString(6));
+        }
+        boolean saveBatch = index2Service.saveBatch(list);
+        if (saveBatch) {
+            return new ResponseUtil(200, "创建二级指标成功");
+        }
+        return new ResponseUtil(500, "创建二级指标失败");
+    }
+
+    @PostMapping("/newIndex3")
+    public ResponseUtil newIndex3(@RequestParam Integer index2Id, @RequestBody List<EvaluateIndex3> list) {
+        for (EvaluateIndex3 index3 : list) {
+            String[] content = index3.getIndex3Content().split("\\|");
+            if ((index3.getType() == 1 && content.length != 2) || (index3.getType() == 2 && content.length != 4)) {
+                return new ResponseUtil(500, "指标选项有误");
             }
+            String[] score = index3.getIndex3Score().split("\\|");
+            if ((index3.getType() == 1 && score.length != 2) || (index3.getType() == 2 && score.length != 4)) {
+                return new ResponseUtil(500, "指标得分有误");
+            }
+            index3.setIndex2Id(index2Id);
         }
-
-        return new ResponseUtil(200, "新增评价体系成功");
+        boolean saveBatch = index3Service.saveBatch(list);
+        if (saveBatch) {
+            return new ResponseUtil(200, "创建三级指标成功");
+        }
+        return new ResponseUtil(500, "创建三级指标失败");
     }
+
+
+//    /**
+//     * desc: 启动评估周期页面：查询所有评价体系
+//     * params: []
+//     * return: com.winkel.qualityevaluation.util.ResponseUtil
+//     * exception:
+//     **/
+//    @GetMapping("/listEvaluateIndex")
+//    public ResponseUtil listEvaluateIndex() {
+//        List<EvaluateIndex> list = indexService.list();
+//        if (list.isEmpty()) {
+//            return new ResponseUtil(200, "评价体系为空");
+//        }
+//        return new ResponseUtil(200, "查询评价体系成功", list);
+//    }
+
+//    /**
+//     * desc: 创建一套评价体系
+//     * params: [vo]
+//     * return: com.winkel.qualityevaluation.util.ResponseUtil
+//     * exception:
+//     **/
+//    @PostMapping("/newEvaluateIndex")
+//    public ResponseUtil newEvaluateIndex(@RequestBody EvaluateIndexVo vo) {
+//        EvaluateIndex index = vo.getEvaluateIndex();
+//        indexService.save(index);
+//
+//        List<Index1Vo> index1List = vo.getIndex1List();
+//        for (Index1Vo index1Vo : index1List) {
+//            EvaluateIndex1 index1 = index1Vo.getEvaluateIndex1();
+//            index1Service.save(index1.setEvaluateIndexId(index.getEvaluateId()));
+//
+//            List<Index2Vo> index2VoList = index1Vo.getIndex2VoList();
+//            for (Index2Vo index2Vo : index2VoList) {
+//                EvaluateIndex2 index2 = index2Vo.getEvaluateIndex2();
+//                index2Service.save(index2.setIndex1Id(index1.getIndex1Id()));
+//
+//                List<EvaluateIndex3> index3List = index2Vo.getIndex3List();
+//                for (EvaluateIndex3 index3 : index3List) {
+//                    index3Service.save(index3.setIndex2Id(index2.getIndex2Id()));
+//                }
+//            }
+//        }
+//
+//        return new ResponseUtil(200, "新增评价体系成功");
+//    }
 
     /**
      * desc: 县级管理员获取当前周期
@@ -261,7 +341,9 @@ public class AdminController {
      * exception:
      **/
     @GetMapping("/schools")
-    public ResponseUtil schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer current, @RequestParam("pageSize") Integer pageSize) {
+    public ResponseUtil schools(String schoolCode, String keyName, String keyLocation, String locationCode, Integer
+            isCity, Integer isPublic, Integer isRegister, Integer isGB, @RequestParam("current") Integer
+                                        current, @RequestParam("pageSize") Integer pageSize) {
         IPage<School> page = new Page<>(current, pageSize);
 
         Map<String, Object> queryMap = new HashMap<>(2);
@@ -508,7 +590,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/changeSchoolLocation")
-    public ResponseUtil changeSchoolLocation(@RequestBody List<String> schoolCodes, @RequestParam String locationCode) {
+    public ResponseUtil changeSchoolLocation(@RequestBody List<String> schoolCodes, @RequestParam String
+            locationCode) {
         boolean success;
         for (String schoolCode : schoolCodes) {
             success = schoolService.update(new UpdateWrapper<School>().eq("school_code", schoolCode).set("school_location_code", locationCode));
@@ -528,11 +611,17 @@ public class AdminController {
      **/
     @PostMapping("/changeAdminPassword")
     public ResponseUtil changePassword(HttpServletRequest request, @RequestBody List<String> newPwd) {
-        System.out.println("newPwd.get(0) = " + newPwd.get(0));
         String userId = getTokenUser(request).getId();
         User user = userService.getOne(new QueryWrapper<User>().eq("id", userId).select("password"));
         if (StringUtils.equals(newPwd.get(0), user.getPassword())) {
             return new ResponseUtil(500, "旧密码不能和原密码相同");
+        }
+        String s = newPwd.get(0);
+        String[] split = s.split("");
+        for (String t : split) {
+            if (" ".equals(t)) {
+                return new ResponseUtil(500, "密码不能包含空格");
+            }
         }
         if (userService.update(new UpdateWrapper<User>().eq("id", userId).set("password", newPwd.get(0)))) {
             return new ResponseUtil(200, "修改密码成功");
@@ -548,7 +637,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/changeUserPassword")
-    public ResponseUtil changeUserPassword(@RequestBody List<String> schoolCodes, @RequestParam Integer authorityId) {
+    public ResponseUtil changeUserPassword(@RequestBody List<String> schoolCodes, @RequestParam Integer
+            authorityId) {
         for (String schoolCode : schoolCodes) {
             School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
             Integer currentCycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
@@ -612,7 +702,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/startCycle")
-    public ResponseUtil startCycle(@RequestBody List<String> locationCodes, @RequestParam Integer evaluateIndexId) {
+    public ResponseUtil startCycle(@RequestBody List<String> locationCodes, @RequestParam Integer
+            evaluateIndexId) {
         if (locationCodes.isEmpty()) {
             return new ResponseUtil(500, "请至少选择一所学校");
         }
@@ -683,7 +774,8 @@ public class AdminController {
      * @exception:
      **/
     @PostMapping("/resetEvaluation")
-    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer type) {
+    public ResponseUtil resetEvaluation(@RequestBody List<String> schoolCodeList, @RequestParam("type") Integer
+            type) {
         for (String schoolCode : schoolCodeList) {
             School school = schoolService.getOne(new QueryWrapper<School>().eq("school_code", schoolCode));
             Integer cycle = taskService.getCurrentCycle(school.getLocationCode().substring(0, 6) + "000000");
@@ -754,7 +846,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/auditReport")
-    public ResponseUtil auditReport(@RequestBody List<String> schoolCodes, @RequestParam Integer type, @RequestParam Integer isAccept) {
+    public ResponseUtil auditReport(@RequestBody List<String> schoolCodes, @RequestParam Integer
+            type, @RequestParam Integer isAccept) {
         for (String schoolCode : schoolCodes) {
             Integer taskId = taskService.getTaskIdByBySchoolcodeAndType(schoolCode, type);
             if (taskId == null) {
@@ -786,7 +879,8 @@ public class AdminController {
      * exception:
      **/
     @PostMapping("/uploadLocationReport")
-    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer year, @RequestParam("file") MultipartFile file) {
+    public ResponseUtil uploadLocationReport(HttpServletRequest request, @RequestParam Integer
+            year, @RequestParam("file") MultipartFile file) {
         String locationCode = userService.getOne(new QueryWrapper<User>().eq("id", getTokenUser(request).getId()).select("location_code")).getLocationCode();
         LocationReport report = locationReportService.getOne(new QueryWrapper<LocationReport>().eq("location_code", locationCode).eq("year", year));
         boolean reUpload = false;  // 是否是覆盖区域报告
